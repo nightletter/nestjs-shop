@@ -1,6 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
+import { addTransactionalDataSource } from 'typeorm-transactional';
+import { DatabaseSeederService } from './database-seeder.service';
+import { User } from '../../users/entities/user.entity';
+import { Product } from '../../products/entities/product.entity';
+import { ProductCategory } from '../../products/entities/product-category.entity';
+import { ProductOption } from '../../products/entities/product-option.entity';
+import { CartItem } from '../../cart/entities/cart-item.entity';
+import { RedisModule } from '../redis/redis.module';
 
 @Module({
   imports: [
@@ -14,12 +23,32 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
-        entities: [__dirname + '/../../**/*.entity{.ts,.js}'], // 엔티티 자동 스캔
-        // synchronize: configService.get<string>('NODE_ENV') !== 'production', // 운영에선 false
-        synchronize: true,
+        // 엔티티 자동 스캔은 아래 옵션이 가장 안전합니다.
+        autoLoadEntities: true,
+        synchronize: true, // 개발 환경 전용
         logging: true,
+        dropSchema: true,
+        // MySQL 드라이버 옵션 (extra 객체 내부에 선언하거나 직접 지원하는 경우 확인)
+        extra: {
+          connectionLimit: 10,
+        },
       }),
+      dataSourceFactory: async (options) => {
+        if (!options) throw new Error('Invalid options passed');
+        const dataSource = await new DataSource(options).initialize();
+        return addTransactionalDataSource(dataSource);
+      },
     }),
+    TypeOrmModule.forFeature([
+      User,
+      Product,
+      ProductCategory,
+      ProductOption,
+      CartItem,
+    ]),
+    RedisModule,
   ],
+  providers: [DatabaseSeederService],
+  exports: [DatabaseSeederService],
 })
 export class DatabaseModule {}
