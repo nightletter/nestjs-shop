@@ -11,15 +11,19 @@ jest.mock('bcrypt', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
-  let usersService: jest.Mocked<Pick<UsersService, 'findByEmail'>>;
-  let jwtService: jest.Mocked<Pick<JwtService, 'sign'>>;
+  let usersService: jest.Mocked<Pick<UsersService, 'findByEmail' | 'findOne'>>;
+  let jwtService: jest.Mocked<Pick<JwtService, 'sign' | 'verify'>>;
 
   beforeEach(async () => {
-    const usersServiceMock: jest.Mocked<Pick<UsersService, 'findByEmail'>> = {
+    const usersServiceMock: jest.Mocked<
+      Pick<UsersService, 'findByEmail' | 'findOne'>
+    > = {
       findByEmail: jest.fn(),
+      findOne: jest.fn(),
     };
-    const jwtServiceMock: jest.Mocked<Pick<JwtService, 'sign'>> = {
+    const jwtServiceMock: jest.Mocked<Pick<JwtService, 'sign' | 'verify'>> = {
       sign: jest.fn(),
+      verify: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -63,13 +67,45 @@ describe('AuthService', () => {
     });
     expect(jwtService.sign).toHaveBeenNthCalledWith(
       1,
-      { id: 1, email: 'user@example.com' },
+      { id: 1, email: 'user@example.com', type: 'access' },
       { expiresIn: '1h' },
     );
     expect(jwtService.sign).toHaveBeenNthCalledWith(
       2,
-      { id: 1 },
+      { id: 1, type: 'refresh' },
       { expiresIn: '7d' },
+    );
+  });
+
+  it('refreshes tokens with a valid refresh token', async () => {
+    jwtService.verify.mockReturnValue({ id: 1, type: 'refresh' });
+    usersService.findOne.mockResolvedValue({
+      id: 1,
+      email: 'user@example.com',
+      password: 'hashed-password',
+      nickname: 'user',
+      isActive: true,
+      createAt: new Date(),
+      updateAt: new Date(),
+    });
+    jwtService.sign
+      .mockReturnValueOnce('new-access-token')
+      .mockReturnValueOnce('new-refresh-token');
+
+    const result = await service.refresh('refresh-token');
+
+    expect(result).toEqual({
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+      user: { id: 1, email: 'user@example.com', nickname: 'user' },
+    });
+  });
+
+  it('throws when refresh token payload is not refresh type', async () => {
+    jwtService.verify.mockReturnValue({ id: 1, email: 'user@example.com' });
+
+    await expect(service.refresh('not-refresh-token')).rejects.toBeInstanceOf(
+      UnauthorizedException,
     );
   });
 

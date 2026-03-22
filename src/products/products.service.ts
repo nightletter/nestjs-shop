@@ -9,6 +9,7 @@ import { Product } from './entities/product.entity';
 import { CartItem } from '../cart/entities/cart-item.entity';
 import { ProductCategory } from './entities/product-category.entity';
 import { ProductOption, ProductSize } from './entities/product-option.entity';
+import { ProductsDto } from './dto/products.dto';
 
 @Injectable()
 export class ProductsService {
@@ -23,14 +24,27 @@ export class ProductsService {
     private readonly cartItemRepository: Repository<CartItem>,
   ) {}
 
-  async findAll(category?: string) {
+  async findAll(category?: string): Promise<ProductsDto[]> {
     if (!category) {
-      return this.productRepository.find({
+      const fetchProducts = await this.productRepository.find({
         relations: {
           category: true,
           options: true,
         },
         order: { id: 'ASC' },
+      });
+
+      return fetchProducts.map((product) => {
+        const dto = new ProductsDto();
+
+        // 엔티티 구조에 맞춰서 필드를 매핑하세요.
+        dto.categoryCode = product.category?.code;
+        dto.categoryName = product.category?.name;
+        dto.name = product.name;
+        dto.price = product.price;
+        dto.salePrice = product.salePrice;
+
+        return dto;
       });
     }
 
@@ -42,13 +56,26 @@ export class ProductsService {
       throw new BadRequestException('invalid category');
     }
 
-    return this.productRepository.find({
+    const fetchProducts = await this.productRepository.find({
       where: { categoryId: categoryEntity.id },
       relations: {
         category: true,
         options: true,
       },
       order: { id: 'ASC' },
+    });
+
+    return fetchProducts.map((product) => {
+      const dto = new ProductsDto();
+
+      // 엔티티 구조에 맞춰서 필드를 매핑하세요.
+      dto.categoryCode = product.category?.code;
+      dto.categoryName = product.category?.name;
+      dto.name = product.name;
+      dto.price = product.price;
+      dto.salePrice = product.salePrice;
+
+      return dto;
     });
   }
 

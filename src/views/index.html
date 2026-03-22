@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHOPPE — 로그인</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<div class="center">
+  <div class="card">
+    <div class="logo">SHOPPE</div>
+
+    <div class="fields">
+      <div class="field-wrap">
+        <label class="field-label" for="email">이메일</label>
+        <input type="email" id="email" placeholder="hello@example.com" autocomplete="email" />
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="pw">비밀번호</label>
+        <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+    </div>
+
+    <button class="btn btn-dark" id="btn-login">로그인</button>
+  </div>
+</div>
+
+<script>
+  function tryLogin() {
+    const email = document.getElementById('email').value.trim();
+    const pw    = document.getElementById('pw').value.trim();
+    if (!email || !pw) {
+      const card = document.querySelector('.card');
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+      return;
+    }
+    sessionStorage.setItem('user', email);
+    window.location.href = '/products';
+  }
+
+  document.getElementById('btn-login').addEventListener('click', tryLogin);
+  ['email','pw'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => e.key === 'Enter' && tryLogin())
+  );
+</script>
+</body>
+</html>

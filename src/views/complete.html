@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHOPPE — 결제완료</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<div class="center">
+  <div class="card complete-card">
+    <div class="check-wrap">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none"
+           stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 15 12 21 24 9"/>
+      </svg>
+    </div>
+
+    <div class="complete-title">결제 완료</div>
+    <div class="complete-sub">주문이 접수되었습니다.<br/>확인 메일이 곧 발송됩니다.</div>
+
+    <div class="order-summary">
+      <div class="order-row">
+        <span>주문 번호</span>
+        <span id="order-num">—</span>
+      </div>
+      <div class="order-row">
+        <span>상품</span>
+        <span>Pro Wireless Studio</span>
+      </div>
+      <div class="order-sep"></div>
+      <div class="order-row order-total">
+        <span>결제 금액</span>
+        <span>₩189,000</span>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" onclick="window.location.href='/'">홈으로 돌아가기</button>
+  </div>
+</div>
+
+<script>
+  const num = sessionStorage.getItem('orderNum') || '#SH-00000';
+  document.getElementById('order-num').textContent = num;
+</script>
+</body>
+</html>

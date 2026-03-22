@@ -120,7 +120,8 @@ export class DatabaseSeederService {
     );
 
     await this.cacheService.setCache('bootstrap', product.id);
-    const cachedProductId = await this.cacheService.getCache<number>('bootstrap');
+    const cachedProductId =
+      await this.cacheService.getCache<number>('bootstrap');
     this.logger.log(cachedProductId);
 
     runOnTransactionCommit(() => {

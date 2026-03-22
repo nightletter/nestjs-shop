@@ -8,8 +8,8 @@ import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
-type AccessTokenPayload = { id: number; email: string };
-type RefreshTokenPayload = { id: number };
+type AccessTokenPayload = { id: number; email: string; type: 'access' };
+type RefreshTokenPayload = { id: number; type: 'refresh' };
 
 @Injectable()
 export class AuthService {
@@ -52,9 +52,41 @@ export class AuthService {
     };
   }
 
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new BadRequestException('refreshToken is required');
+    }
+
+    let payload: RefreshTokenPayload;
+    try {
+      payload = this.jwtService.verify<RefreshTokenPayload>(refreshToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    if (payload.type !== 'refresh') {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const user = await this.usersService.findOne(payload.id);
+    const tokens = this.issueTokens(user);
+
+    return {
+      ...tokens,
+      user: {
+        id: user.id,
+        email: user.email,
+        nickname: user.nickname,
+      },
+    };
+  }
+
   validateToken(token: string): AccessTokenPayload {
     try {
       const payload = this.jwtService.verify<AccessTokenPayload>(token);
+      if (!payload.email || payload.type !== 'access') {
+        throw new UnauthorizedException('Invalid access token');
+      }
       return payload;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
@@ -91,8 +123,12 @@ export class AuthService {
     const accessPayload: AccessTokenPayload = {
       id: user.id,
       email: user.email,
+      type: 'access',
     };
-    const refreshPayload: RefreshTokenPayload = { id: user.id };
+    const refreshPayload: RefreshTokenPayload = {
+      id: user.id,
+      type: 'refresh',
+    };
 
     const accessToken = this.jwtService.sign(accessPayload, {
       expiresIn: '1h',
