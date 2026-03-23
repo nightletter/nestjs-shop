@@ -1,16 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
+import { AppController, UnauthorizedRedirectFilter } from './app.controller';
 import type { Response } from 'express';
+import { UnauthorizedException } from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
 
 describe('AppController', () => {
   let appController: AppController;
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-    }).compile();
-
-    appController = app.get<AppController>(AppController);
+  beforeEach(() => {
+    appController = new AppController();
   });
 
   describe('routes', () => {
@@ -49,6 +46,22 @@ describe('AppController', () => {
 
       expect(render).toHaveBeenCalledWith('complete');
     });
+  });
 
+  describe('UnauthorizedRedirectFilter', () => {
+    it('should redirect to / when UnauthorizedException is thrown', () => {
+      const redirect = jest.fn();
+      const response = { redirect } as unknown as Response;
+      const filter = new UnauthorizedRedirectFilter();
+      const host = {
+        switchToHttp: () => ({
+          getResponse: () => response,
+        }),
+      } as unknown as ArgumentsHost;
+
+      filter.catch(new UnauthorizedException(), host);
+
+      expect(redirect).toHaveBeenCalledWith('/');
+    });
   });
 });

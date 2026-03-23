@@ -39,19 +39,15 @@ describe('AppController (e2e)', () => {
   it('/products (GET)', () => {
     return request(app.getHttpServer())
       .get('/products')
-      .expect(200)
-      .expect((res) => {
-        expect(res.text).toContain('<title>SHOPPE — 상품</title>');
-      });
+      .expect(302)
+      .expect('Location', '/');
   });
 
   it('/order/complate (GET)', () => {
     return request(app.getHttpServer())
       .get('/order/complate')
-      .expect(200)
-      .expect((res) => {
-        expect(res.text).toContain('<title>SHOPPE — 결제완료</title>');
-      });
+      .expect(302)
+      .expect('Location', '/');
   });
 
   it('/style.css (GET)', () => {

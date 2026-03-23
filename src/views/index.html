@@ -28,17 +28,86 @@
 </div>
 
 <script>
-  function tryLogin() {
+  async function postJson(url, payload) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, data };
+  }
+
+  async function login(email, password) {
+    return postJson('/auth/login', { email, password });
+  }
+
+  async function signup(email, password) {
+    return postJson('/auth/signup', { email, password });
+  }
+
+  function setAuthState(authResult) {
+    sessionStorage.setItem('accessToken', authResult.accessToken);
+    sessionStorage.setItem('refreshToken', authResult.refreshToken);
+    sessionStorage.setItem('user', authResult.user.email);
+  }
+
+  function setAuthCookie(accessToken) {
+    document.cookie = `accessToken=${encodeURIComponent(accessToken)}; path=/; SameSite=Lax`;
+  }
+
+  function showShake() {
+    const card = document.querySelector('.card');
+    card.classList.remove('shake');
+    void card.offsetWidth;
+    card.classList.add('shake');
+  }
+
+  function showError(message) {
+    showShake();
+    window.alert(message);
+  }
+
+  async function tryLogin() {
     const email = document.getElementById('email').value.trim();
     const pw    = document.getElementById('pw').value.trim();
     if (!email || !pw) {
-      const card = document.querySelector('.card');
-      card.classList.remove('shake');
-      void card.offsetWidth;
-      card.classList.add('shake');
+      showShake();
       return;
     }
-    sessionStorage.setItem('user', email);
+
+    const loginResult = await login(email, pw);
+    if (loginResult.ok) {
+      setAuthState(loginResult.data);
+      setAuthCookie(loginResult.data.accessToken);
+      window.location.href = '/products';
+      return;
+    }
+
+    if (loginResult.status !== 401) {
+      const message =
+        typeof loginResult.data.message === 'string'
+          ? loginResult.data.message
+          : '로그인 처리 중 오류가 발생했습니다.';
+      showError(message);
+      return;
+    }
+
+    const signupResult = await signup(email, pw);
+    if (!signupResult.ok) {
+      showError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      return;
+    }
+
+    const retryLoginResult = await login(email, pw);
+    if (!retryLoginResult.ok) {
+      showError('로그인 처리 중 오류가 발생했습니다.');
+      return;
+    }
+
+    setAuthState(retryLoginResult.data);
+    setAuthCookie(retryLoginResult.data.accessToken);
     window.location.href = '/products';
   }
 

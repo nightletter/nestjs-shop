@@ -136,7 +136,7 @@ input:focus { border-color: var(--ink); }
    PRODUCT
 ════════════════ */
 .product-card {
-  max-width: 380px;
+  max-width: 540px;
   overflow: hidden;
   padding: 0;
 }

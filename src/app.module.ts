@@ -8,7 +8,6 @@ import configuration from './config/configuration';
 import { DatabaseModule } from './common/database/database.module';
 import { join } from 'path';
 import { ProductsModule } from './products/products.module';
-import { CartModule } from './cart/cart.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppListener } from './app.listener';
 import { RedisModule } from './common/redis/redis.module';
@@ -24,7 +23,6 @@ import { RedisModule } from './common/redis/redis.module';
     }),
     DatabaseModule,
     ProductsModule,
-    CartModule,
     EventEmitterModule.forRoot({
       wildcard: true,
       delimiter: '.',

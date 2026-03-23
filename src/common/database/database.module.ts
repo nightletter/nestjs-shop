@@ -6,9 +6,6 @@ import { addTransactionalDataSource } from 'typeorm-transactional';
 import { DatabaseSeederService } from './database-seeder.service';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
-import { ProductCategory } from '../../products/entities/product-category.entity';
-import { ProductOption } from '../../products/entities/product-option.entity';
-import { CartItem } from '../../cart/entities/cart-item.entity';
 import { RedisModule } from '../redis/redis.module';
 
 @Module({
@@ -39,13 +36,7 @@ import { RedisModule } from '../redis/redis.module';
         return addTransactionalDataSource(dataSource);
       },
     }),
-    TypeOrmModule.forFeature([
-      User,
-      Product,
-      ProductCategory,
-      ProductOption,
-      CartItem,
-    ]),
+    TypeOrmModule.forFeature([User, Product]),
     RedisModule,
   ],
   providers: [DatabaseSeederService],
