@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { Product } from '../../products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CacheService } from '../redis/cache.service';
-import { OrderQueuePublisherService } from '../redis/order-queue-publisher.service';
 import { runOnTransactionCommit, Transactional } from 'typeorm-transactional';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { User } from '../../users/entities/user.entity';
+import { Product } from '../../products/entities/product.entity';
+import { CacheService } from '../redis/cache.service';
+import { OrderQueuePublisherService } from '../redis/order-queue-publisher.service';
 
 @Injectable()
 export class DatabaseSeederService {
@@ -44,7 +44,7 @@ export class DatabaseSeederService {
 
     runOnTransactionCommit(() => {
       this.eventEmitter.emit('application.bootstrap', {
-        product: product,
+        product,
       });
       void this.orderQueuePublisherService.publishBootstrapProductCreated(
         product.id,

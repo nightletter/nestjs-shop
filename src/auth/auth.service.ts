@@ -4,9 +4,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
 
 type AccessTokenPayload = { id: number; email: string; type: 'access' };
 type RefreshTokenPayload = { id: number; type: 'refresh' };

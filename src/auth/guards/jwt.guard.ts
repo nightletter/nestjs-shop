@@ -41,7 +41,7 @@ export class JwtGuard implements CanActivate {
     }
 
     const headers = request.headers as Record<string, unknown>;
-    const rawAuthorization = headers['authorization'];
+    const rawAuthorization = headers.authorization;
     let authHeader: string | undefined;
 
     if (typeof rawAuthorization === 'string') {

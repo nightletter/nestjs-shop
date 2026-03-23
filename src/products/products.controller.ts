@@ -9,6 +9,6 @@ export class ProductsController {
   @Get()
   @UseGuards(JwtGuard)
   async findAll() {
-    return await this.productsService.findAll();
+    return this.productsService.findAll();
   }
 }

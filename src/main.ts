@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { DatabaseSeederService } from './common/database/database-seeder.service';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import hbs from 'hbs';
+import { DatabaseSeederService } from './common/database/database-seeder.service';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   initializeTransactionalContext();

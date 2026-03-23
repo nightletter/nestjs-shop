@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from './../src/app.module';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import hbs from 'hbs';
 import { join } from 'path';
+import { AppModule } from '../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: NestExpressApplication;

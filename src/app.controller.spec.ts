@@ -1,7 +1,7 @@
-import { AppController, UnauthorizedRedirectFilter } from './app.controller';
 import type { Response } from 'express';
 import { UnauthorizedException } from '@nestjs/common';
 import type { ArgumentsHost } from '@nestjs/common';
+import { AppController, UnauthorizedRedirectFilter } from './app.controller';
 
 describe('AppController', () => {
   let appController: AppController;

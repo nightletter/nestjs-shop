@@ -139,7 +139,7 @@
     }
 
     // ------  결제위젯 초기화 ------
-    const clientKey = '';
+    const clientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
     const tossPayments = TossPayments(clientKey);
     // 회원 결제
     const customerKey = 'pwbpuTKS5EfAH1htz3yKx';
@@ -163,10 +163,26 @@
     button.addEventListener('click', async function() {
 
       try {
+        const orderResponse = await fetch('/api/order', {
+          method: 'POST',
+          credentials: 'include',
+        });
+
+        if (!orderResponse.ok) {
+          throw new Error('주문 생성 실패');
+        }
+
+        const createdOrder = await orderResponse.json();
+        const orderId = String(createdOrder.orderNumber ?? '');
+
+        if (!orderId) {
+          throw new Error('주문 번호가 없습니다.');
+        }
+
         await widgets.requestPayment({
-          orderId: `SH-${Date.now()}`,
+          orderId,
           orderName: rendered.productName,
-          successUrl: window.location.origin + '/order/complete',
+          successUrl: window.location.origin + '/api/order/confirm',
           failUrl: window.location.origin + '/order/fail',
           customerEmail: 'customer123@gmail.com',
           customerName: '김토스',
