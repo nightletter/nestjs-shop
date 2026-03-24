@@ -12,6 +12,7 @@ import { ProductsModule } from './products/products.module';
 import { AppListener } from './app.listener';
 import { RedisModule } from './common/redis/redis.module';
 import { OrderModule } from './order/order.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { OrderModule } from './order/order.module';
     }),
     RedisModule,
     OrderModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppListener],

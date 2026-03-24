@@ -98,7 +98,11 @@
     }
 
     root.appendChild(fragment);
-    return { salePrice: normalizedSalePrice, productName: String(product.name ?? '상품') };
+    return {
+      productId: Number(product.id),
+      salePrice: normalizedSalePrice,
+      productName: String(product.name ?? '상품'),
+    };
   }
 
   async function loadProducts() {
@@ -112,7 +116,7 @@
     }
 
     const products = await response.json();
-    const rendered = renderProducts(products);
+    const rendered = await renderProducts(products);
     if (rendered) {
       await main(rendered);
     }
@@ -160,12 +164,18 @@
       widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
     ]);
 
-    button.addEventListener('click', async function() {
-
+    button.addEventListener('click', async () => {
       try {
         const orderResponse = await fetch('/api/order', {
           method: 'POST',
           credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            productId: rendered.productId,
+            salePrice: rendered.salePrice,
+          }),
         });
 
         if (!orderResponse.ok) {
