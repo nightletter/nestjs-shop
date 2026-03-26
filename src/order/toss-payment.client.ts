@@ -26,10 +26,11 @@ export class TossPaymentClient {
     const result = await firstValueFrom(
       this.httpService.post(
         'https://api.tosspayments.com/v1/payments/confirm',
-        data,
+        JSON.stringify(data),
         {
           headers: {
             Authorization: `Basic ${token}`,
+            'Content-Type': 'application/json',
           },
         },
       ),

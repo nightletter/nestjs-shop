@@ -41,16 +41,14 @@ export class Order {
     return order;
   }
 
-  execute(totalAmount: number, balanceAmount: number) {
+  execute(amount: number) {
     this.status = 'IN_PROGRESS';
-    this.totalAmount = totalAmount;
-    this.balanceAmount = balanceAmount;
+    this.totalAmount = amount;
+    this.balanceAmount = amount;
   }
 
-  confirm(totalAmount: number, balanceAmount: number) {
+  confirm() {
     this.status = 'COMPLETED';
-    this.totalAmount = totalAmount;
-    this.balanceAmount = balanceAmount;
   }
 
   fail() {

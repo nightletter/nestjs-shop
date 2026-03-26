@@ -4,6 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { TossPaymentConfirmResponseDto } from '../../order/dto/toss-payment-confirm-response.dto';
 
 @Entity('payments')
 export class Payment {
@@ -39,5 +40,13 @@ export class Payment {
     payment.orderId = orderId;
     payment.userId = userId;
     return payment;
+  }
+
+  success(confirmResult: TossPaymentConfirmResponseDto) {
+    this.paymentKey = confirmResult.paymentKey;
+    this.method = confirmResult.method;
+    this.approvedAt = new Date();
+    this.is_done = true;
+    this.payload = JSON.stringify(confirmResult);
   }
 }

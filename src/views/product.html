@@ -192,7 +192,7 @@
         await widgets.requestPayment({
           orderId,
           orderName: rendered.productName,
-          successUrl: window.location.origin + '/api/order/confirm',
+          successUrl: window.location.origin + '/order/complete',
           failUrl: window.location.origin + '/order/fail',
           customerEmail: 'customer123@gmail.com',
           customerName: '김토스',

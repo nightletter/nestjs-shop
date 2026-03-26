@@ -43,6 +43,28 @@
 <script>
   const num = sessionStorage.getItem('orderNum') || '#SH-00000';
   document.getElementById('order-num').textContent = num;
+
+  const urlParams = new URLSearchParams(window.location.search);
+
+  async function confirm() {
+    const data = {
+      paymentKey: urlParams.get('paymentKey'),
+      orderId: urlParams.get('orderId'),
+      amount: urlParams.get('amount'),
+    }
+
+    const response = await fetch('/api/order/confirm', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+
+  }
+
+  confirm();
 </script>
 </body>
 </html>
