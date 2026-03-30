@@ -21,13 +21,13 @@ export class Payment {
   paymentKey: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
+  status: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
   method: string;
 
   @Column({ type: 'date', nullable: true })
   approvedAt: Date;
-
-  @Column({ type: 'boolean', default: false })
-  is_done: boolean;
 
   @Column({ type: 'text', nullable: true })
   payload: string;
@@ -39,14 +39,20 @@ export class Payment {
     const payment = new Payment();
     payment.orderId = orderId;
     payment.userId = userId;
+    payment.status = 'PEND';
     return payment;
   }
 
   success(confirmResult: TossPaymentConfirmResponseDto) {
     this.paymentKey = confirmResult.paymentKey;
+    this.status = 'SUCCESS';
     this.method = confirmResult.method;
     this.approvedAt = new Date();
-    this.is_done = true;
     this.payload = JSON.stringify(confirmResult);
+  }
+
+  failure(paymentKey: string) {
+    this.paymentKey = paymentKey;
+    this.status = 'FAILURE';
   }
 }

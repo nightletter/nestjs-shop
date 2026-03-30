@@ -51,7 +51,7 @@ export class Order {
     this.status = 'COMPLETED';
   }
 
-  fail() {
+  failure() {
     this.status = 'FAILED';
   }
 }

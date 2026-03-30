@@ -13,4 +13,8 @@ export class PaymentProcessor {
   async create(orderId: number, userId: number): Promise<Payment> {
     return this.paymentRepository.save(Payment.create(orderId, userId));
   }
+
+  async save(payment: Payment): Promise<Payment> {
+    return this.paymentRepository.save(payment);
+  }
 }

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import OrderService from './order.service';
@@ -21,5 +29,14 @@ export class OrderController {
   @Post('/confirm')
   async findAll(@Body() param: SuccessOrderDto) {
     await this.orderService.confirm(param);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get(':id')
+  async getOrder(
+    @CurrentUser() user: { id: number },
+    @Param('id') orderId: number,
+  ) {
+    return this.orderService.getOrderById(user.id, orderId);
   }
 }

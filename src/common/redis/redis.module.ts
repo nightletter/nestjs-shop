@@ -32,6 +32,10 @@ import { OrderQueuePublisherService } from './order-queue-publisher.service';
     BullModule.registerQueue({
       name: 'order-queue',
     }),
+
+    BullModule.registerQueue({
+      name: 'payment-queue',
+    }),
   ],
   providers: [CacheService, OrderQueuePublisherService],
   exports: [CacheService, OrderQueuePublisherService],
