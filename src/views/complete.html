@@ -5,20 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SHOPPE — 결제완료</title>
   <link rel="stylesheet" href="/style.css" />
+  <style>
+    .status-message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .status-processing {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .status-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status-failed {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .check-wrap.failed {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+    .check-wrap.processing {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    }
+  </style>
 </head>
 <body>
 
 <div class="center">
   <div class="card complete-card">
-    <div class="check-wrap">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none"
+    <div class="check-wrap" id="status-icon">
+      <svg id="icon-svg" width="30" height="30" viewBox="0 0 30 30" fill="none"
            stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 15 12 21 24 9"/>
+        <!-- 초기: 처리중 아이콘 (원) -->
+        <circle cx="15" cy="15" r="10"/>
       </svg>
     </div>
 
-    <div class="complete-title">결제 완료</div>
-    <div class="complete-sub">주문이 접수되었습니다.<br/>확인 메일이 곧 발송됩니다.</div>
+    <div class="complete-title" id="page-title">결제 처리중</div>
+    <div class="complete-sub" id="page-subtitle">주문을 확인하고 있습니다.<br/>잠시만 기다려주세요.</div>
 
     <div class="order-summary">
       <div class="order-row">
@@ -36,7 +65,9 @@
       </div>
     </div>
 
-    <button class="btn btn-ghost" onclick="window.location.href='/'">홈으로 돌아가기</button>
+    <div id="status-message"></div>
+
+    <button class="btn btn-ghost" onclick="window.location.href='/'" id="home-btn" style="display:none;">홈으로 돌아가기</button>
   </div>
 </div>
 
@@ -45,7 +76,32 @@
   document.getElementById('order-num').textContent = num;
 
   const urlParams = new URLSearchParams(window.location.search);
+  let pollingInterval = null;
+  let pollingCount = 0;
+  const MAX_POLLING_COUNT = 10; // 최대 30번 (30초)
 
+  // 아이콘 변경 함수
+  function updateIcon(type) {
+    const iconWrap = document.getElementById('status-icon');
+    const iconSvg = document.getElementById('icon-svg');
+    
+    iconWrap.className = 'check-wrap';
+    
+    if (type === 'success') {
+      // 체크 아이콘
+      iconSvg.innerHTML = '<polyline points="6 15 12 21 24 9"/>';
+    } else if (type === 'failed') {
+      // X 아이콘
+      iconWrap.classList.add('failed');
+      iconSvg.innerHTML = '<line x1="9" y1="9" x2="21" y2="21"/><line x1="21" y1="9" x2="9" y2="21"/>';
+    } else if (type === 'processing') {
+      // 처리중 아이콘 (원)
+      iconWrap.classList.add('processing');
+      iconSvg.innerHTML = '<circle cx="15" cy="15" r="10"/>';
+    }
+  }
+
+  // 결제 확인 API 호출
   async function confirm() {
     const data = {
       paymentKey: urlParams.get('paymentKey'),
@@ -53,18 +109,126 @@
       amount: urlParams.get('amount'),
     }
 
-    const response = await fetch('/api/order/confirm', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch('/api/order/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-
+      if (response.ok) {
+        console.log('결제 확인 요청 성공');
+        // 확인 요청 후 polling 시작
+        startPolling();
+      } else {
+        showError('결제 확인 요청에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('결제 확인 실패:', error);
+      showError('결제 확인 중 오류가 발생했습니다.');
+    }
   }
 
+  // 주문 상태 조회 API
+  async function checkOrderStatus() {
+    const orderId = sessionStorage.getItem('currentOrderId');
+    if (!orderId) {
+      console.error('주문 ID가 없습니다.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`/api/order/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        handleOrderStatus(data.status);
+      } else if (response.status === 401) {
+        showError('인증이 만료되었습니다. 다시 로그인해주세요.');
+        stopPolling();
+      } else {
+        console.error('주문 상태 조회 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('주문 상태 조회 오류:', error);
+    }
+
+    pollingCount++;
+    if (pollingCount >= MAX_POLLING_COUNT) {
+      stopPolling();
+      showError('주문 처리 시간이 초과되었습니다. 고객센터로 문의해주세요.');
+    }
+  }
+
+  // 주문 상태에 따른 UI 업데이트
+  function handleOrderStatus(status) {
+    console.log('주문 상태:', status);
+
+    if (status === 'COMPLETED') {
+      stopPolling();
+      showSuccess();
+    } else if (status === 'FAILED') {
+      stopPolling();
+      showError('결제에 실패했습니다. 다시 시도해주세요.');
+    } else if (status === 'IN_PROGRESS' || status === 'CREATED') {
+      // 계속 polling
+      showProcessing();
+    }
+  }
+
+  // Polling 시작
+  function startPolling() {
+    pollingInterval = setInterval(checkOrderStatus, 1000); // 1초마다 확인
+  }
+
+  // Polling 중지
+  function stopPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      pollingInterval = null;
+    }
+  }
+
+  // 처리중 UI
+  function showProcessing() {
+    updateIcon('processing');
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.className = 'status-message status-processing';
+    statusDiv.textContent = '결제를 처리하고 있습니다...';
+  }
+
+  // 성공 UI
+  function showSuccess() {
+    updateIcon('success');
+    document.getElementById('page-title').textContent = '결제 완료';
+    document.getElementById('page-subtitle').innerHTML = '주문이 접수되었습니다.<br/>확인 메일이 곧 발송됩니다.';
+  }
+
+  // 실패 UI
+  function showError(message) {
+    updateIcon('failed');
+    document.getElementById('page-title').textContent = '결제 실패';
+    document.getElementById('page-subtitle').innerHTML = '죄송합니다.<br/>결제 처리 중 문제가 발생했습니다.';
+
+    document.getElementById('home-btn').style.display = 'block';
+  }
+
+  // 페이지 로드 시 실행
+  updateIcon('processing');
   confirm();
+
+  // 페이지 언로드 시 polling 정리
+  window.addEventListener('beforeunload', () => {
+    stopPolling();
+  });
 </script>
 </body>
 </html>

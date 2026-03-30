@@ -189,6 +189,10 @@
           throw new Error('주문 번호가 없습니다.');
         }
 
+        // orderId를 sessionStorage에 저장 (complete.html에서 polling에 사용)
+        sessionStorage.setItem('currentOrderId', createdOrder.id);
+        sessionStorage.setItem('orderNum', orderId);
+
         await widgets.requestPayment({
           orderId,
           orderName: rendered.productName,
