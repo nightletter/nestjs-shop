@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getQueueToken } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { PaymentEventPublisher } from './payment-event.publisher';
+import { OrderEventPublisher } from '../order/order-event-publisher.service';
 
 describe('PaymentEventPublisher', () => {
-  let publisher: PaymentEventPublisher;
+  let publisher: OrderEventPublisher;
   let mockQueue: jest.Mocked<Queue>;
 
   beforeEach(async () => {
@@ -14,7 +14,7 @@ describe('PaymentEventPublisher', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        PaymentEventPublisher,
+        OrderEventPublisher,
         {
           provide: getQueueToken('payment-queue'),
           useValue: mockQueue,
@@ -22,7 +22,7 @@ describe('PaymentEventPublisher', () => {
       ],
     }).compile();
 
-    publisher = module.get<PaymentEventPublisher>(PaymentEventPublisher);
+    publisher = module.get<OrderEventPublisher>(OrderEventPublisher);
   });
 
   afterEach(() => {
@@ -46,14 +46,14 @@ describe('PaymentEventPublisher', () => {
       mockQueue.add.mockResolvedValue({} as any);
 
       // Act
-      await publisher.publishPaymentSuccess(eventData);
+      await publisher.publishOrderComplete(eventData);
 
       // Assert
       expect(mockQueue.add).toHaveBeenCalledTimes(1);
       expect(mockQueue.add).toHaveBeenCalledWith(
-        'payment.success',
+        'order.success',
         expect.objectContaining({
-          event: 'payment.success',
+          event: 'order.success',
           paymentId: 1,
           orderId: 100,
           userId: 50,
@@ -86,7 +86,7 @@ describe('PaymentEventPublisher', () => {
 
       // Act
       const beforePublish = new Date().toISOString();
-      await publisher.publishPaymentSuccess(eventData);
+      await publisher.publishOrderComplete(eventData);
       const afterPublish = new Date().toISOString();
 
       // Assert
@@ -118,13 +118,13 @@ describe('PaymentEventPublisher', () => {
       mockQueue.add.mockResolvedValue({} as any);
 
       // Act
-      await publisher.publishPaymentSuccess(eventData);
+      await publisher.publishOrderComplete(eventData);
 
       // Assert
       const callArgs = mockQueue.add.mock.calls[0];
       const publishedEvent = callArgs[1];
 
-      expect(publishedEvent.event).toBe('payment.success');
+      expect(publishedEvent.event).toBe('order.success');
       expect(publishedEvent.paymentId).toBe(999);
       expect(publishedEvent.orderId).toBe(888);
       expect(publishedEvent.userId).toBe(777);
@@ -149,7 +149,7 @@ describe('PaymentEventPublisher', () => {
       mockQueue.add.mockResolvedValue({} as any);
 
       // Act
-      await publisher.publishPaymentSuccess(eventData);
+      await publisher.publishOrderComplete(eventData);
 
       // Assert
       const callArgs = mockQueue.add.mock.calls[0];
@@ -177,7 +177,7 @@ describe('PaymentEventPublisher', () => {
       mockQueue.add.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(publisher.publishPaymentSuccess(eventData)).rejects.toThrow(
+      await expect(publisher.publishOrderComplete(eventData)).rejects.toThrow(
         'Queue connection failed',
       );
     });

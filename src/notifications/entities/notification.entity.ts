@@ -25,9 +25,6 @@ export class Notification {
   @Column({ type: 'int', nullable: true, unsigned: true })
   orderId: number;
 
-  @Column({ type: 'int', nullable: true, unsigned: true })
-  paymentId: number;
-
   @CreateDateColumn()
   createdAt: Date;
 
@@ -36,7 +33,6 @@ export class Notification {
     message: string,
     type: string = 'PAYMENT',
     orderId?: number,
-    paymentId?: number,
   ): Notification {
     const notification = new Notification();
     notification.userId = userId;
@@ -44,7 +40,6 @@ export class Notification {
     notification.type = type;
     notification.isRead = false;
     if (orderId !== undefined) notification.orderId = orderId;
-    if (paymentId !== undefined) notification.paymentId = paymentId;
     return notification;
   }
 }

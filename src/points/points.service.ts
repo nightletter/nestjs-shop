@@ -15,9 +15,8 @@ export class PointsService {
     amount: number,
     reason: string,
     orderId?: number,
-    paymentId?: number,
   ): Promise<Point> {
-    const point = Point.create(userId, amount, reason, orderId, paymentId);
+    const point = Point.create(userId, amount, reason, orderId);
     return this.pointRepository.save(point);
   }
 

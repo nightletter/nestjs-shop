@@ -15,15 +15,8 @@ export class NotificationsService {
     message: string,
     type: string = 'PAYMENT',
     orderId?: number,
-    paymentId?: number,
   ): Promise<Notification> {
-    const notification = Notification.create(
-      userId,
-      message,
-      type,
-      orderId,
-      paymentId,
-    );
+    const notification = Notification.create(userId, message, type, orderId);
     return this.notificationRepository.save(notification);
   }
 

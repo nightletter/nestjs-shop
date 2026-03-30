@@ -5,7 +5,7 @@ import { runOnTransactionCommit, Transactional } from 'typeorm-transactional';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { User } from '../../users/entities/user.entity';
 import { Product } from '../../products/entities/product.entity';
-import { CacheService } from '../redis/cache.service';
+import CacheService from '../redis/cache.service';
 import { OrderQueuePublisherService } from '../redis/order-queue-publisher.service';
 
 @Injectable()
@@ -37,9 +37,9 @@ export class DatabaseSeederService {
       }),
     );
 
-    await this.cacheService.setCache('bootstrap', product.id);
+    await this.cacheService.setCache('bootstrap', product.id, 1);
     const cachedProductId =
-      await this.cacheService.getCache<number>('bootstrap');
+      await this.cacheService.getCache<number>('bootstrap', 1);
     this.logger.log(cachedProductId);
 
     runOnTransactionCommit(() => {

@@ -22,9 +22,6 @@ export class Point {
   @Column({ type: 'int', nullable: true, unsigned: true })
   orderId: number;
 
-  @Column({ type: 'int', nullable: true, unsigned: true })
-  paymentId: number;
-
   @CreateDateColumn()
   createdAt: Date;
 
@@ -33,14 +30,12 @@ export class Point {
     amount: number,
     reason: string,
     orderId?: number,
-    paymentId?: number,
   ): Point {
     const point = new Point();
     point.userId = userId;
     point.amount = amount;
     point.reason = reason;
     if (orderId !== undefined) point.orderId = orderId;
-    if (paymentId !== undefined) point.paymentId = paymentId;
     return point;
   }
 }

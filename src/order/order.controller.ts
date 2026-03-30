@@ -32,11 +32,11 @@ export class OrderController {
   }
 
   @UseGuards(JwtGuard)
-  @Get(':id')
+  @Get(':id/status')
   async getOrder(
     @CurrentUser() user: { id: number },
     @Param('id') orderId: string,
   ) {
-    return this.orderService.getOrderById(user.id, parseInt(orderId, 10));
+    return this.orderService.getOrderStatus(user.id, parseInt(orderId, 10));
   }
 }

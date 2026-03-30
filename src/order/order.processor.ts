@@ -10,13 +10,11 @@ export class OrderProcessor {
     private readonly orderRepository: Repository<Order>,
   ) {}
 
-  async execute(orderId: string, amount: number) {
-    const order = await this.orderRepository.findOneBy({
-      orderNumber: orderId,
-    });
+  async create(userId: number, productId: number): Promise<Order> {
+    return this.orderRepository.save(Order.create(userId, productId));
+  }
 
-    if (order) {
-      order.execute(amount);
-    }
+  async save(order: Order) {
+    return this.orderRepository.save(order);
   }
 }

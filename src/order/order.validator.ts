@@ -15,6 +15,8 @@ export class OrderValidator {
       id: productId,
     });
 
-    return findProduct?.salePrice === salePrice;
+    if (findProduct?.salePrice !== salePrice) {
+      throw new Error('상품 정보가 올바르지 않습니다.');
+    }
   }
 }

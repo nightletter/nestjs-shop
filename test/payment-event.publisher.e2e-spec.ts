@@ -3,12 +3,12 @@ import { INestApplication } from '@nestjs/common';
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
-import { PaymentEventPublisher } from '../src/payment/payment-event.publisher';
+import { OrderEventPublisher } from '@/order/order-event-publisher.service';
 import configuration from '../src/config/configuration';
 
 describe('PaymentEventPublisher (e2e)', () => {
   let app: INestApplication;
-  let paymentEventPublisher: PaymentEventPublisher;
+  let paymentEventPublisher: OrderEventPublisher;
   let paymentQueue: Queue;
 
   beforeAll(async () => {
@@ -32,14 +32,14 @@ describe('PaymentEventPublisher (e2e)', () => {
           name: 'payment-queue',
         }),
       ],
-      providers: [PaymentEventPublisher],
+      providers: [OrderEventPublisher],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    paymentEventPublisher = moduleFixture.get<PaymentEventPublisher>(
-      PaymentEventPublisher,
+    paymentEventPublisher = moduleFixture.get<OrderEventPublisher>(
+      OrderEventPublisher,
     );
     paymentQueue = moduleFixture.get<Queue>(getQueueToken('payment-queue'));
   });
@@ -77,7 +77,7 @@ describe('PaymentEventPublisher (e2e)', () => {
       };
 
       // Act
-      await paymentEventPublisher.publishPaymentSuccess(eventData);
+      await paymentEventPublisher.publishOrderComplete(eventData);
 
       // Wait a bit for the job to be added
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -88,14 +88,14 @@ describe('PaymentEventPublisher (e2e)', () => {
 
       const publishedJob = jobs.find(
         (job) =>
-          job.name === 'payment.success' &&
+          job.name === 'order.success' &&
           job.data.paymentId === 123 &&
           job.data.orderId === 456,
       );
 
       expect(publishedJob).toBeDefined();
       expect(publishedJob!.data).toMatchObject({
-        event: 'payment.success',
+        event: 'order.success',
         paymentId: 123,
         orderId: 456,
         userId: 789,
@@ -123,7 +123,7 @@ describe('PaymentEventPublisher (e2e)', () => {
       const beforePublish = new Date();
 
       // Act
-      await paymentEventPublisher.publishPaymentSuccess(eventData);
+      await paymentEventPublisher.publishOrderComplete(eventData);
 
       // Wait for the job to be added
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -134,7 +134,7 @@ describe('PaymentEventPublisher (e2e)', () => {
       const jobs = await paymentQueue.getJobs(['waiting', 'completed']);
       const publishedJob = jobs.find(
         (job) =>
-          job.name === 'payment.success' &&
+          job.name === 'order.success' &&
           job.data.paymentId === 999 &&
           job.data.paymentKey === 'timestamp-test-key',
       );
@@ -168,7 +168,7 @@ describe('PaymentEventPublisher (e2e)', () => {
       // Act
       await Promise.all(
         events.map((event) =>
-          paymentEventPublisher.publishPaymentSuccess(event),
+          paymentEventPublisher.publishOrderComplete(event),
         ),
       );
 
@@ -181,7 +181,7 @@ describe('PaymentEventPublisher (e2e)', () => {
       for (let i = 0; i < 5; i++) {
         const job = jobs.find(
           (j) =>
-            j.name === 'payment.success' &&
+            j.name === 'order.success' &&
             j.data.paymentId === 1000 + i &&
             j.data.paymentKey === `concurrent-test-key-${i}`,
         );

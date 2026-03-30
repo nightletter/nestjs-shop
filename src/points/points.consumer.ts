@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
-import { PaymentSuccessEvent } from '../payment/payment-event.publisher';
+import { OrderCompleteEvent } from '../order/order-event-publisher.service';
 import { PointsService } from './points.service';
 
 @Processor('points-queue')
@@ -13,17 +13,15 @@ export class PointsConsumer extends WorkerHost {
     super();
   }
 
-  async process(job: Job<PaymentSuccessEvent>): Promise<void> {
-    if (job.name !== 'payment.success') {
+  async process(job: Job<OrderCompleteEvent>): Promise<void> {
+    if (job.name !== 'order.success') {
       return;
     }
 
-    this.logger.log(
-      `Processing points for payment: ${job.data.paymentId}, order: ${job.data.orderId}`,
-    );
+    this.logger.log(`Processing points for order: ${job.data.orderId}`);
 
     try {
-      const { userId, amount, orderId, paymentId } = job.data;
+      const { userId, amount, orderId} = job.data;
       const pointsToEarn = Math.floor(amount * 0.1);
 
       await this.pointsService.earnPoints(
@@ -31,7 +29,6 @@ export class PointsConsumer extends WorkerHost {
         pointsToEarn,
         '결제 완료 포인트 적립',
         orderId,
-        paymentId,
       );
 
       this.logger.log(
@@ -39,7 +36,7 @@ export class PointsConsumer extends WorkerHost {
       );
     } catch (error) {
       this.logger.error(
-        `Failed to process points for payment ${job.data.paymentId}`,
+        `Failed to process points for order ${job.data.orderId}`,
         error,
       );
       throw error;

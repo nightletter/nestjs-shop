@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BullModule } from '@nestjs/bullmq';
 import { AuthModule } from '../auth/auth.module';
 import { PaymentModule } from '../payment/payment.module';
 import { RedisModule } from '../common/redis/redis.module';
@@ -10,16 +11,33 @@ import { TossPaymentClient } from './toss-payment.client';
 import { Order } from './entities/order.entity';
 import { OrderValidator } from './order.validator';
 import { Product } from '../products/entities/product.entity';
+import { OrderEventPublisher } from '@/order/order-event-publisher.service';
+import OrderTransactionService from '@/order/order-transaction.service';
+import { OrderProcessor } from '@/order/order.processor';
+import { Payment } from '@/payment/entities/payment.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, Product]),
+    TypeOrmModule.forFeature([Order, Product, Payment]),
     HttpModule,
     AuthModule,
     PaymentModule,
     RedisModule,
+    BullModule.registerQueue({
+      name: 'points-queue',
+    }),
+    BullModule.registerQueue({
+      name: 'notifications-queue',
+    }),
   ],
   controllers: [OrderController],
-  providers: [OrderService, TossPaymentClient, OrderValidator],
+  providers: [
+    OrderService,
+    TossPaymentClient,
+    OrderValidator,
+    OrderEventPublisher,
+    OrderProcessor,
+    OrderTransactionService,
+  ],
 })
 export class OrderModule {}

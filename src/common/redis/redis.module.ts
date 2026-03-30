@@ -2,7 +2,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { RedisModule as CacheModule } from '@liaoliaots/nestjs-redis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CacheService } from './cache.service';
+import CacheService from './cache.service';
 import { OrderQueuePublisherService } from './order-queue-publisher.service';
 
 @Module({

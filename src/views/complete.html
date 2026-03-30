@@ -141,7 +141,7 @@
 
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`/api/order/${orderId}`, {
+      const response = await fetch(`/api/order/${orderId}/status`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

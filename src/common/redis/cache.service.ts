@@ -1,21 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '@liaoliaots/nestjs-redis';
+import { kExec } from 'ioredis/built/autoPipelining';
 
 @Injectable()
-export class CacheService {
+class CacheService {
   constructor(private readonly redisService: RedisService) {}
 
-  async setCache<T>(key: string, value: T, ttl = 3600): Promise<void> {
+  async getCache<T>(aggregate: string, key: number): Promise<T | null> {
     const client = this.redisService.getOrThrow();
-    await client.set(key, JSON.stringify(value), 'EX', ttl);
-  }
-
-  async getCache<T>(key: string): Promise<T | null> {
-    const client = this.redisService.getOrThrow();
-    const data = await client.get(key);
+    const data = await client.get(this.convertKey(aggregate, key));
     if (!data) {
       return null;
     }
     return JSON.parse(data) as T;
   }
+
+  async setCache<T>(
+    aggregate: string,
+    key: number,
+    value: T,
+    ttl = 1800,
+  ): Promise<void> {
+    const cacheKey = this.convertKey(aggregate, key);
+    const client = this.redisService.getOrThrow();
+    await client.set(cacheKey, JSON.stringify(value), 'EX', ttl);
+  }
+
+  private convertKey(aggregate: string, key: number) {
+    return `${aggregate}:${key}`;
+  }
 }
+
+export default CacheService;
