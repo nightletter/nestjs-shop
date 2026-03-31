@@ -17,14 +17,10 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { email, password, nickname } = createUserDto;
-
-    if (!email || !password || !nickname) {
-      throw new BadRequestException('email, password, nickname are required');
-    }
+    const { email, password } = createUserDto;
 
     const existingUser = await this.userRepository.findOne({
-      where: { email },
+      where: { loginId: email },
     });
 
     if (existingUser) {
@@ -32,7 +28,7 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = User.create(email, hashedPassword, nickname);
+    const user = User.create(email, hashedPassword);
 
     return this.userRepository.save(user);
   }
@@ -48,6 +44,6 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
-    return this.userRepository.findOne({ where: { email } });
+    return this.userRepository.findOne({ where: { loginId: email } });
   }
 }

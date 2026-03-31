@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SHOPPE — 로그인</title>
   <link rel="stylesheet" href="/style.css" />
+  <script src="/auth.js"></script>
 </head>
 <body>
 
@@ -14,8 +15,8 @@
 
     <div class="fields">
       <div class="field-wrap">
-        <label class="field-label" for="email">이메일</label>
-        <input type="email" id="email" placeholder="hello@example.com" autocomplete="email" />
+        <label class="field-label" for="loginId">아이디</label>
+        <input type="email" id="loginId" />
       </div>
       <div class="field-wrap">
         <label class="field-label" for="pw">비밀번호</label>
@@ -28,33 +29,9 @@
 </div>
 
 <script>
-  async function postJson(url, payload) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    return { ok: response.ok, status: response.status, data };
-  }
-
-  async function login(email, password) {
-    return postJson('/auth/login', { email, password });
-  }
-
-  async function signup(email, password) {
-    return postJson('/auth/signup', { email, password });
-  }
-
-  function setAuthState(authResult) {
-    sessionStorage.setItem('accessToken', authResult.accessToken);
-    sessionStorage.setItem('refreshToken', authResult.refreshToken);
-    sessionStorage.setItem('user', authResult.user.email);
-  }
-
-  function setAuthCookie(accessToken) {
-    document.cookie = `accessToken=${encodeURIComponent(accessToken)}; path=/; SameSite=Lax`;
+  // 토큰이 이미 있으면 products 페이지로 리다이렉트
+  if (Auth.isAuthenticated()) {
+    window.location.href = '/products';
   }
 
   function showShake() {
@@ -70,17 +47,16 @@
   }
 
   async function tryLogin() {
-    const email = document.getElementById('email').value.trim();
-    const pw    = document.getElementById('pw').value.trim();
-    if (!email || !pw) {
+    const loginId = document.getElementById('loginId').value.trim();
+    const pw = document.getElementById('pw').value.trim();
+    if (!loginId || !pw) {
       showShake();
       return;
     }
 
-    const loginResult = await login(email, pw);
+    const loginResult = await Auth.login(loginId, pw);
     if (loginResult.ok) {
-      setAuthState(loginResult.data);
-      setAuthCookie(loginResult.data.accessToken);
+      Auth.setAuth(loginResult.data);
       window.location.href = '/products';
       return;
     }
@@ -94,26 +70,25 @@
       return;
     }
 
-    const signupResult = await signup(email, pw);
+    const signupResult = await Auth.signup(loginId, pw);
     if (!signupResult.ok) {
       showError('이메일 또는 비밀번호가 올바르지 않습니다.');
       return;
     }
 
-    const retryLoginResult = await login(email, pw);
+    const retryLoginResult = await Auth.login(loginId, pw);
     if (!retryLoginResult.ok) {
       showError('로그인 처리 중 오류가 발생했습니다.');
       return;
     }
 
-    setAuthState(retryLoginResult.data);
-    setAuthCookie(retryLoginResult.data.accessToken);
+    Auth.setAuth(retryLoginResult.data);
     window.location.href = '/products';
   }
 
   document.getElementById('btn-login').addEventListener('click', tryLogin);
-  ['email','pw'].forEach(id =>
-    document.getElementById(id).addEventListener('keydown', e => e.key === 'Enter' && tryLogin())
+  ['loginId', 'pw'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => e.key === 'Enter' && tryLogin()),
   );
 </script>
 </body>

@@ -29,7 +29,6 @@ export class AppController {
     res.render('index');
   }
 
-  @UseGuards(JwtGuard)
   @Get('products')
   renderProducts(@Res() res: Response): void {
     res.render('product');

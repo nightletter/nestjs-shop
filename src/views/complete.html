@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SHOPPE — 결제완료</title>
   <link rel="stylesheet" href="/style.css" />
+  <script src="/auth.js"></script>
   <style>
     .status-message {
       margin-top: 20px;
@@ -72,7 +73,15 @@
 </div>
 
 <script>
-  const num = sessionStorage.getItem('orderNum') || '#SH-00000';
+  // 인증 확인
+  if (!Auth.requireAuth()) {
+    // requireAuth에서 이미 리다이렉트 처리
+  }
+
+  // 네비게이션 바 렌더링
+  Auth.renderNavbar();
+
+  const num = localStorage.getItem('orderNum') || '#SH-00000';
   document.getElementById('order-num').textContent = num;
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -133,32 +142,26 @@
 
   // 주문 상태 조회 API
   async function checkOrderStatus() {
-    const orderId = sessionStorage.getItem('currentOrderId');
+    const orderId = localStorage.getItem('currentOrderId');
     if (!orderId) {
       console.error('주문 ID가 없습니다.');
       return;
     }
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`/api/order/${orderId}/status`, {
+      const response = await Auth.fetch(`/api/order/${orderId}/status`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       if (response.ok) {
         const data = await response.json();
         handleOrderStatus(data.status);
-      } else if (response.status === 401) {
-        showError('인증이 만료되었습니다. 다시 로그인해주세요.');
-        stopPolling();
       } else {
         console.error('주문 상태 조회 실패:', response.status);
       }
     } catch (error) {
       console.error('주문 상태 조회 오류:', error);
+      // Auth.fetch에서 401/403은 이미 처리됨
     }
 
     pollingCount++;

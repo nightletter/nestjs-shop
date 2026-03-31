@@ -1,5 +1,4 @@
-export class LoginDto {
-  email: string;
+import { PartialType } from '@nestjs/mapped-types';
+import { SignupDto } from '@/auth/dto/signup.dto';
 
-  password: string;
-}
+export class LoginDto extends PartialType(SignupDto) {}

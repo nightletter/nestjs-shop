@@ -15,6 +15,7 @@ import { OrderEventPublisher } from '@/order/order-event-publisher.service';
 import OrderTransactionService from '@/order/order-transaction.service';
 import { OrderProcessor } from '@/order/order.processor';
 import { Payment } from '@/payment/entities/payment.entity';
+import { QueueNames } from '@/common/constants/queue-events.constants';
 
 @Module({
   imports: [
@@ -24,10 +25,10 @@ import { Payment } from '@/payment/entities/payment.entity';
     PaymentModule,
     RedisModule,
     BullModule.registerQueue({
-      name: 'points-queue',
+      name: QueueNames.POINTS,
     }),
     BullModule.registerQueue({
-      name: 'notifications-queue',
+      name: QueueNames.NOTIFICATIONS,
     }),
   ],
   controllers: [OrderController],

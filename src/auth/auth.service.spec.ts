@@ -46,7 +46,7 @@ describe('AuthService', () => {
   it('logs in and issues tokens', async () => {
     usersService.findByEmail.mockResolvedValue({
       id: 1,
-      email: 'user@example.com',
+      loginId: 'user@example.com',
       password: 'hashed-password',
       nickname: 'user',
       isActive: true,
@@ -81,7 +81,7 @@ describe('AuthService', () => {
     jwtService.verify.mockReturnValue({ id: 1, type: 'refresh' });
     usersService.findOne.mockResolvedValue({
       id: 1,
-      email: 'user@example.com',
+      loginId: 'user@example.com',
       password: 'hashed-password',
       nickname: 'user',
       isActive: true,
@@ -118,7 +118,7 @@ describe('AuthService', () => {
   it('throws when password does not match', async () => {
     usersService.findByEmail.mockResolvedValue({
       id: 1,
-      email: 'user@example.com',
+      loginId: 'user@example.com',
       password: 'hashed-password',
       nickname: 'user',
       isActive: true,

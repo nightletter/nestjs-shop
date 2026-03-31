@@ -12,13 +12,10 @@ export class User {
   id: number;
 
   @Column({ type: 'varchar', length: 255, unique: true })
-  email: string;
+  loginId: string;
 
   @Column({ type: 'varchar', length: 255 })
   password: string;
-
-  @Column({ type: 'varchar', length: 100 })
-  nickname: string;
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
@@ -29,11 +26,10 @@ export class User {
   @UpdateDateColumn()
   updateAt: Date;
 
-  static create(email: string, password: string, nickname: string): User {
+  static create(loginId: string, password: string): User {
     const user = new User();
-    user.email = email;
+    user.loginId = loginId;
     user.password = password;
-    user.nickname = nickname;
     user.isActive = true;
     return user;
   }

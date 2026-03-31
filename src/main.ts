@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -10,6 +11,15 @@ async function bootstrap() {
   initializeTransactionalContext();
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+  
   app.setBaseViewsDir(join(__dirname, 'views'));
   app.engine('html', hbs.__express);
   app.setViewEngine('html');

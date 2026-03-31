@@ -5,8 +5,14 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service';
-import { User } from '../users/entities/user.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { User } from '@/users/entities/user.entity';
+import { AuthTransactionService } from '@/auth/auth-transaction.service';
+import { SignupDto } from '@/auth/dto/signup.dto';
+import { LoginDto } from '@/auth/dto/login.dto';
+import { UserSignupEvent } from '@/users/events/user-signup.event';
 
 type AccessTokenPayload = { id: number; email: string; type: 'access' };
 type RefreshTokenPayload = { id: number; type: 'refresh' };
@@ -14,31 +20,35 @@ type RefreshTokenPayload = { id: number; type: 'refresh' };
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly authTransactionService: AuthTransactionService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async signup(email: string, password: string) {
-    if (!email || !password) {
-      throw new BadRequestException('email and password are required');
-    }
+  async signup(param: SignupDto) {
+    const hashedPassword = await bcrypt.hash(param.password, 10);
+    const user = await this.authTransactionService.create(
+      param.loginId,
+      hashedPassword,
+    );
 
-    const user = await this.usersService.create({
-      email,
-      password,
-      nickname: email.split('@')[0],
-    });
+    this.eventEmitter.emit('users.signup', new UserSignupEvent(user.id));
 
     return {
       id: user.id,
-      email: user.email,
-      nickname: user.nickname,
+      loginId: user.loginId,
       message: 'User registered successfully',
     };
   }
 
-  async login(email: string, password: string) {
-    const user = await this.validateUserCredentials(email, password);
+  async login(param: LoginDto) {
+    const user = await this.validateUserCredentials(
+      param.loginId,
+      param.password,
+    );
+
     const { accessToken, refreshToken } = this.issueTokens(user);
 
     return {
@@ -46,8 +56,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: user.id,
-        email: user.email,
-        nickname: user.nickname,
+        loginId: user.loginId,
       },
     };
   }
@@ -68,15 +77,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const user = await this.usersService.findOne(payload.id);
+    const user = await this.userRepository.findOneByOrFail({ id: payload.id });
+
     const tokens = this.issueTokens(user);
 
     return {
       ...tokens,
       user: {
         id: user.id,
-        email: user.email,
-        nickname: user.nickname,
+        email: user.loginId,
       },
     };
   }
@@ -94,14 +103,18 @@ export class AuthService {
   }
 
   private async validateUserCredentials(
-    email: string,
-    password: string,
+    loginId: string | undefined,
+    password: string | undefined,
   ): Promise<User> {
-    if (!email || !password) {
+    if (!loginId || !password) {
       throw new BadRequestException('email and password are required');
     }
 
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.userRepository.findOne({
+      where: {
+        loginId,
+      },
+    });
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -116,13 +129,13 @@ export class AuthService {
     return user;
   }
 
-  private issueTokens(user: Pick<User, 'id' | 'email'>): {
+  private issueTokens(user: Pick<User, 'id' | 'loginId'>): {
     accessToken: string;
     refreshToken: string;
   } {
     const accessPayload: AccessTokenPayload = {
       id: user.id,
-      email: user.email,
+      email: user.loginId,
       type: 'access',
     };
     const refreshPayload: RefreshTokenPayload = {

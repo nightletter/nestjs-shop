@@ -252,3 +252,118 @@ input:focus { border-color: var(--ink); }
 .order-row span:last-child  { font-weight: 600; }
 .order-sep { height: 1px; background: var(--line); }
 .order-total span { font-weight: 700; font-size: .93rem; }
+
+/* ════════════════
+   NAVBAR
+════════════════ */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 100;
+  animation: slideDown .3s ease forwards;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.navbar-logo {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.3rem;
+  letter-spacing: .06em;
+  color: var(--ink);
+  text-decoration: none;
+  transition: opacity .2s;
+}
+
+.navbar-logo:hover {
+  opacity: 0.7;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Points Display - Gradient Purple Design */
+.navbar-points {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 10px 18px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-radius: 20px !important;
+  font-size: .88rem !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25) !important;
+  transition: all .25s ease !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.navbar-points:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35) !important;
+}
+
+.navbar-points-icon {
+  font-size: 1.1rem !important;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)) !important;
+  display: inline-block !important;
+}
+
+.navbar-points-value {
+  color: #fff !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  font-size: .9rem !important;
+  display: inline-block !important;
+}
+
+.navbar-points-label {
+  font-size: .75rem !important;
+  opacity: 0.9 !important;
+  font-weight: 500 !important;
+  display: inline-block !important;
+}
+
+.navbar-logout {
+  padding: 10px 20px !important;
+  border: 1.5px solid var(--line) !important;
+  border-radius: 20px !important;
+  background: transparent !important;
+  color: var(--sub) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: .85rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all .2s ease !important;
+}
+
+.navbar-logout:hover {
+  border-color: var(--ink) !important;
+  color: var(--ink) !important;
+  background: var(--bg) !important;
+  transform: translateY(-1px) !important;
+}
+
+.navbar-logout:active {
+  transform: scale(.96) !important;
+}
+
+/* navbar가 있을 때 center 상단 패딩 추가 */
+body.has-navbar .center {
+  padding-top: 96px;
+}

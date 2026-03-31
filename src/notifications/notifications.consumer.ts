@@ -3,8 +3,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { OrderCompleteEvent } from '../order/order-event-publisher.service';
 import { NotificationsService } from './notifications.service';
+import { QueueEvents, QueueNames } from '@/common/constants/queue-events.constants';
 
-@Processor('notifications-queue')
+@Processor(QueueNames.NOTIFICATIONS)
 @Injectable()
 export class NotificationsConsumer extends WorkerHost {
   private readonly logger = new Logger(NotificationsConsumer.name);
@@ -14,7 +15,7 @@ export class NotificationsConsumer extends WorkerHost {
   }
 
   async process(job: Job<OrderCompleteEvent>): Promise<void> {
-    if (job.name !== 'order.success') {
+    if (job.name !== QueueEvents.ORDER_SUCCESS) {
       return;
     }
 

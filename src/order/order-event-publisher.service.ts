@@ -2,16 +2,17 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Order } from '@/order/entities/order.entity';
+import { QueueEvents, QueueNames } from '@/common/constants/queue-events.constants';
 
 export type OrderCompleteEvent = {
-  event: 'order.success';
+  event: typeof QueueEvents.ORDER_SUCCESS;
   orderId: number;
   userId: number;
   amount: number;
 };
 
 export type OrderFailureEvent = {
-  event: 'order.failure';
+  event: typeof QueueEvents.ORDER_FAILURE;
   paymentId: number;
   orderId: number;
   userId: number;
@@ -25,9 +26,9 @@ export type OrderEvent = OrderCompleteEvent | OrderFailureEvent;
 @Injectable()
 export class OrderEventPublisher {
   constructor(
-    @InjectQueue('points-queue')
+    @InjectQueue(QueueNames.POINTS)
     private readonly pointsQueue: Queue<OrderEvent>,
-    @InjectQueue('notifications-queue')
+    @InjectQueue(QueueNames.NOTIFICATIONS)
     private readonly notificationsQueue: Queue<OrderEvent>,
   ) {}
 
@@ -38,12 +39,12 @@ export class OrderEventPublisher {
       amount: order.totalAmount,
     };
 
-    await this.pointsQueue.add('order.success', payload, {
+    await this.pointsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {
       removeOnComplete: 100,
       removeOnFail: 100,
     });
 
-    await this.notificationsQueue.add('order.success', payload, {
+    await this.notificationsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {
       removeOnComplete: 100,
       removeOnFail: 100,
     });
@@ -53,17 +54,17 @@ export class OrderEventPublisher {
     event: Omit<OrderFailureEvent, 'event' | 'timestamp'>,
   ): Promise<void> {
     const payload: OrderFailureEvent = {
-      event: 'order.failure',
+      event: QueueEvents.ORDER_FAILURE,
       ...event,
       timestamp: new Date().toISOString(),
     };
 
-    await this.pointsQueue.add('order.failure', payload, {
+    await this.pointsQueue.add(QueueEvents.ORDER_FAILURE, payload, {
       removeOnComplete: 100,
       removeOnFail: 100,
     });
 
-    await this.notificationsQueue.add('order.failure', payload, {
+    await this.notificationsQueue.add(QueueEvents.ORDER_FAILURE, payload, {
       removeOnComplete: 100,
       removeOnFail: 100,
     });
