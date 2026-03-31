@@ -32,6 +32,7 @@
         <label>
           <input type="checkbox" id="use-all-points" /> 포인트 전액사용
         </label>
+        <div class="helper" id="use-points-info">로딩 중...</div>
       </div>
       <div id="payment-method"></div>
       <div id="agreement"></div>
@@ -166,11 +167,45 @@
       customerKey,
     });
 
-    await widgets.setAmount({
-      currency: 'KRW',
-      value: rendered.salePrice,
-    });
+    // 포인트 잔액 확인 및 초기 결제 금액 설정
+    let pointsBalance = 0;
+    try {
+      const data = await Auth.fetchJson('/api/points/balance');
+      pointsBalance = Number(data.balance || 0);
+    } catch (e) {
+      pointsBalance = 0;
+    }
 
+    const pointsCheckbox = document.getElementById('use-all-points');
+    const pointsInfo = document.getElementById('use-points-info');
+
+    const computeRemaining = () => {
+      const useAll = pointsCheckbox instanceof HTMLInputElement && pointsCheckbox.checked;
+      return Math.max(rendered.salePrice - (useAll ? pointsBalance : 0), 0);
+    };
+
+    const updatePointsInfo = (remaining) => {
+      if (!pointsInfo) return;
+      if (pointsBalance <= 0) {
+        pointsInfo.textContent = '포인트 잔액이 없습니다.';
+      } else {
+        const used = Math.min(pointsBalance, rendered.salePrice);
+        if (remaining === 0) {
+          pointsInfo.textContent = `포인트 ${used.toLocaleString()}원으로 전액 결제됩니다.`;
+        } else if (used > 0) {
+          pointsInfo.textContent = `포인트 ${used.toLocaleString()}원 사용 후 결제 금액: ${remaining.toLocaleString()}원`;
+        } else {
+          pointsInfo.textContent = `포인트 잔액: ${pointsBalance.toLocaleString()}원`;
+        }
+      }
+    };
+
+    // 초기 렌더링 전 결제 금액 설정
+    const initialRemaining = computeRemaining();
+    await widgets.setAmount({ currency: 'KRW', value: initialRemaining });
+    updatePointsInfo(initialRemaining);
+
+    // 렌더링 후 위젯 표시
     await Promise.all([
       widgets.renderPaymentMethods({
         selector: '#payment-method',
@@ -178,6 +213,19 @@
       }),
       widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
     ]);
+
+    // 체크박스 변경 시 금액 업데이트
+    if (pointsCheckbox instanceof HTMLInputElement) {
+      pointsCheckbox.addEventListener('change', async () => {
+        const remaining = computeRemaining();
+        try {
+          await widgets.setAmount({ currency: 'KRW', value: remaining });
+        } catch (e) {
+          // ignore widget errors
+        }
+        updatePointsInfo(remaining);
+      });
+    }
 
     button.addEventListener('click', async () => {
       try {
@@ -207,6 +255,23 @@
         // orderId를 localStorage에 저장 (complete.html에서 polling에 사용)
         localStorage.setItem('currentOrderId', createdOrder.id);
         localStorage.setItem('orderNum', orderId);
+
+        // 결제할 남은 금액을 계산
+        const useAll = document.getElementById('use-all-points')?.checked === true;
+        let pointsBalanceAfter = pointsBalance;
+        try {
+          const data = await Auth.fetchJson('/api/points/balance');
+          pointsBalanceAfter = Number(data.balance || 0);
+        } catch (e) {
+          pointsBalanceAfter = pointsBalance;
+        }
+        const remainingToPay = Math.max(rendered.salePrice - (useAll ? pointsBalanceAfter : 0), 0);
+
+        if (remainingToPay === 0) {
+          // 포인트로 전액 결제된 경우 결제 위젯 호출 없이 완료 페이지로 이동
+          window.location.href = '/order/complete';
+          return;
+        }
 
         await widgets.requestPayment({
           orderId,
