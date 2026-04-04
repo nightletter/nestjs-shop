@@ -90,6 +90,17 @@ export class AuthService {
     };
   }
 
+  async validateUser(userId: number) {
+    const fetchUser = await this.userRepository.existsBy({
+      id: userId,
+      isActive: true,
+    });
+
+    if (!fetchUser) {
+      throw new UnauthorizedException('User not found');
+    }
+  }
+
   validateToken(token: string): AccessTokenPayload {
     try {
       const payload = this.jwtService.verify<AccessTokenPayload>(token);

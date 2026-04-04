@@ -6,15 +6,19 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { AuthService } from '@/auth/auth.service';
 
 type JwtPayload = { id: number; loginId: string; type: 'access' };
 type RequestWithUser = Request & { user?: JwtPayload };
 
 @Injectable()
 export class JwtGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly authService: AuthService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const token = this.extractToken(request);
 
@@ -24,10 +28,14 @@ export class JwtGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify<JwtPayload>(token);
+
       if (payload.type !== 'access' || !payload.loginId) {
         throw new UnauthorizedException('Invalid access token');
       }
+
+      await this.authService.validateUser(payload.id);
       request.user = payload;
+
       return true;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
