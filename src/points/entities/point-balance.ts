@@ -29,9 +29,9 @@ export class PointBalance {
   }
 
   subtract(amount: number) {
-    this.balance -= amount;
+    this.balance -= Math.abs(amount);
 
-    if (this.balance <= 0) {
+    if (this.balance < 0) {
       this.balance = 0;
     }
   }

@@ -351,7 +351,7 @@ input:focus { border-color: var(--ink); }
 }
 
 .navbar-points-value {
-  color: #fff !important;
+  color: #000000 !important;
   font-weight: 700 !important;
   letter-spacing: 0.02em !important;
   font-size: .9rem !important;

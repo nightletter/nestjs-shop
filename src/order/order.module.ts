@@ -16,6 +16,7 @@ import OrderTransactionService from '@/order/order-transaction.service';
 import { OrderProcessor } from '@/order/order.processor';
 import { Payment } from '@/payment/entities/payment.entity';
 import { QueueNames } from '@/common/constants/queue-events.constants';
+import { PointsModule } from '@/points/points.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { QueueNames } from '@/common/constants/queue-events.constants';
     BullModule.registerQueue({
       name: QueueNames.NOTIFICATIONS,
     }),
+    PointsModule,
   ],
   controllers: [OrderController],
   providers: [

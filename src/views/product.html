@@ -189,15 +189,15 @@
       if (pointsBalance <= 0) {
         pointsInfo.textContent = '포인트 잔액이 없습니다.';
       } else {
-        const used = Math.min(pointsBalance, rendered.salePrice);
+        const useAll = pointsCheckbox instanceof HTMLInputElement && pointsCheckbox.checked;
+        const used = useAll ? Math.min(pointsBalance, rendered.salePrice) : 0;
         if (remaining === 0) {
           pointsInfo.textContent = `포인트 ${used.toLocaleString()}원으로 전액 결제됩니다.`;
         } else if (used > 0) {
           pointsInfo.textContent = `포인트 ${used.toLocaleString()}원 사용 후 결제 금액: ${remaining.toLocaleString()}원`;
         } else {
           pointsInfo.textContent = `포인트 잔액: ${pointsBalance.toLocaleString()}원`;
-        }
-      }
+        } }
     };
 
     // 초기 렌더링 전 결제 금액 설정

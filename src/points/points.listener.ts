@@ -3,6 +3,7 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { UserSignupEvent } from '@/users/events/user-signup.event';
 import PointsService from '@/points/points.service';
 import { Point } from '@/points/entities/point.entity';
+import { QueueEvents } from '@/common/constants/queue-events.constants';
 
 @Injectable()
 export class PointsListener {
@@ -20,6 +21,6 @@ export class PointsListener {
       '회원가입',
     );
 
-    await this.pointsService.savePointWithBalance(point);
+    await this.pointsService.earnPointWithBalance(point);
   }
 }

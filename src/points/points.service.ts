@@ -15,7 +15,7 @@ class PointsService {
   ) {}
 
   @Transactional()
-  async savePointWithBalance(point: Point) {
+  async earnPointWithBalance(point: Point) {
     await this.pointRepository.save(point);
 
     const userId = point.userId;
@@ -26,6 +26,18 @@ class PointsService {
 
     pointBalance.add(point.amount);
     await this.balanceRepository.save(pointBalance);
+  }
+
+  @Transactional()
+  async subtractPointWithBalance(point: Point) {
+    const userId = point.userId;
+    const balance = await this.balanceRepository.findOne({ where: { userId } });
+
+    if (balance) {
+      await this.pointRepository.save(point);
+      balance.subtract(point.amount);
+      await this.balanceRepository.save(balance);
+    }
   }
 
   async getUserPoints(userId: number): Promise<Point[]> {

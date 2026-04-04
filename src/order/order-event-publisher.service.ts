@@ -2,13 +2,17 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Order } from '@/order/entities/order.entity';
-import { QueueEvents, QueueNames } from '@/common/constants/queue-events.constants';
+import {
+  QueueEvents,
+  QueueNames,
+} from '@/common/constants/queue-events.constants';
 
 export type OrderCompleteEvent = {
   event: typeof QueueEvents.ORDER_SUCCESS;
   orderId: number;
   userId: number;
   amount: number;
+  pointsUsed: number;
 };
 
 export type OrderFailureEvent = {
@@ -37,34 +41,18 @@ export class OrderEventPublisher {
       orderId: order.id,
       userId: order.userId,
       amount: order.totalAmount,
+      pointsUsed: order.pointsUsed,
     };
 
-    await this.pointsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {
-      removeOnComplete: 100,
-      removeOnFail: 100,
-    });
+    if (order.pointsUsed > 0) {
+      await this.pointsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {
+        removeOnComplete: 100,
+        removeOnFail: 100,
+      });
+    }
 
+    // 알림은 항상 보냄
     await this.notificationsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {
-      removeOnComplete: 100,
-      removeOnFail: 100,
-    });
-  }
-
-  async publishPaymentFailure(
-    event: Omit<OrderFailureEvent, 'event' | 'timestamp'>,
-  ): Promise<void> {
-    const payload: OrderFailureEvent = {
-      event: QueueEvents.ORDER_FAILURE,
-      ...event,
-      timestamp: new Date().toISOString(),
-    };
-
-    await this.pointsQueue.add(QueueEvents.ORDER_FAILURE, payload, {
-      removeOnComplete: 100,
-      removeOnFail: 100,
-    });
-
-    await this.notificationsQueue.add(QueueEvents.ORDER_FAILURE, payload, {
       removeOnComplete: 100,
       removeOnFail: 100,
     });

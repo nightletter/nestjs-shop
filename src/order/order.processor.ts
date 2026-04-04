@@ -2,16 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
+import { PointsReader } from '@/points/points.reader';
 
 @Injectable()
 export class OrderProcessor {
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
+    private readonly pointsReader: PointsReader,
   ) {}
 
-  async create(userId: number, productId: number): Promise<Order> {
-    return this.orderRepository.save(Order.create(userId, productId));
+  async create(userId: number, productId: number, pointsUsed?: number): Promise<Order> {
+    return this.orderRepository.save(Order.create(userId, productId, pointsUsed));
+  }
+
+  async getUserPointsBalance(userId: number): Promise<number> {
+    return this.pointsReader.getBalance(userId);
   }
 
   async save(order: Order) {

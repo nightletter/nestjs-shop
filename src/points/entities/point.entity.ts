@@ -13,7 +13,7 @@ export class Point {
   @Column({ type: 'varchar', length: 255, nullable: false })
   refType: string;
 
-  @Column({ type: 'int', nullable: false, unique: true })
+  @Column({ type: 'int', nullable: false, unique: false })
   refId: number;
 
   @Column({ type: 'int', nullable: false, unsigned: true })

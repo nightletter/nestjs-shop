@@ -29,14 +29,18 @@ export class Order {
   @Column({ type: 'int', default: 0, unsigned: true })
   balanceAmount: number;
 
+  @Column({ type: 'int', default: 0, unsigned: true })
+  pointsUsed: number;
+
   @CreateDateColumn()
   createAt: Date;
 
-  static create(userId: number, productId: number): Order {
+  static create(userId: number, productId: number, pointsUsed?: number): Order {
     const order = new Order();
     order.orderNumber = randomUUID();
     order.userId = userId;
     order.productId = productId;
+    order.pointsUsed = pointsUsed ?? 0;
     order.status = 'CREATED';
     return order;
   }
@@ -44,7 +48,7 @@ export class Order {
   execute(amount: number) {
     this.status = 'IN_PROGRESS';
     this.totalAmount = amount;
-    this.balanceAmount = amount;
+    this.balanceAmount = amount - this.pointsUsed;
   }
 
   confirm() {
