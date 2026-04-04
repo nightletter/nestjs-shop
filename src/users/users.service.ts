@@ -17,10 +17,10 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { email, password } = createUserDto;
+    const { loginId, password } = createUserDto;
 
     const existingUser = await this.userRepository.findOne({
-      where: { loginId: email },
+      where: { loginId },
     });
 
     if (existingUser) {
@@ -28,7 +28,7 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = User.create(email, hashedPassword);
+    const user = User.create(loginId, hashedPassword);
 
     return this.userRepository.save(user);
   }

@@ -11,7 +11,7 @@ async function bootstrap() {
   initializeTransactionalContext();
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -19,7 +19,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  
+
   app.setBaseViewsDir(join(__dirname, 'views'));
   app.engine('html', hbs.__express);
   app.setViewEngine('html');

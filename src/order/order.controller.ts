@@ -7,8 +7,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JwtGuard } from '../auth/guards/jwt.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { JwtGuard } from '@/auth/guards/jwt.guard';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import OrderService from './order.service';
 import { SuccessOrderDto } from './dto/success-order.dto';
 import { CreateOrderRequest } from './dto/create-order.request';

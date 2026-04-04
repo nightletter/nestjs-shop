@@ -237,7 +237,7 @@
           body: JSON.stringify({
             productId: rendered.productId,
             salePrice: rendered.salePrice,
-            useAllPoints: document.getElementById('use-all-points')?.checked === true,
+            useAllPoints: !!document.getElementById('use-all-points')?.checked,
           }),
         });
 

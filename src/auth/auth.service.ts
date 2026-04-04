@@ -14,7 +14,7 @@ import { SignupDto } from '@/auth/dto/signup.dto';
 import { LoginDto } from '@/auth/dto/login.dto';
 import { UserSignupEvent } from '@/users/events/user-signup.event';
 
-type AccessTokenPayload = { id: number; email: string; type: 'access' };
+type AccessTokenPayload = { id: number; loginId: string; type: 'access' };
 type RefreshTokenPayload = { id: number; type: 'refresh' };
 
 @Injectable()
@@ -85,7 +85,7 @@ export class AuthService {
       ...tokens,
       user: {
         id: user.id,
-        email: user.loginId,
+        loginId: user.loginId,
       },
     };
   }
@@ -93,7 +93,7 @@ export class AuthService {
   validateToken(token: string): AccessTokenPayload {
     try {
       const payload = this.jwtService.verify<AccessTokenPayload>(token);
-      if (!payload.email || payload.type !== 'access') {
+      if (!payload.loginId || payload.type !== 'access') {
         throw new UnauthorizedException('Invalid access token');
       }
       return payload;
@@ -135,7 +135,7 @@ export class AuthService {
   } {
     const accessPayload: AccessTokenPayload = {
       id: user.id,
-      email: user.loginId,
+      loginId: user.loginId,
       type: 'access',
     };
     const refreshPayload: RefreshTokenPayload = {

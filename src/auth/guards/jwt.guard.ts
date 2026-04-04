@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
-type JwtPayload = { id: number; email: string; type: 'access' };
+type JwtPayload = { id: number; loginId: string; type: 'access' };
 type RequestWithUser = Request & { user?: JwtPayload };
 
 @Injectable()
@@ -24,7 +24,7 @@ export class JwtGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify<JwtPayload>(token);
-      if (payload.type !== 'access' || !payload.email) {
+      if (payload.type !== 'access' || !payload.loginId) {
         throw new UnauthorizedException('Invalid access token');
       }
       request.user = payload;
