@@ -11,8 +11,8 @@ const Alert = {
   showPointsEarned(points) {
     this.show({
       type: 'points',
-      title: '포인트 적립 완료!',
-      message: `${points.toLocaleString()}P가 적립되었습니다`,
+      title: '포인트 적립 완료! 🎉',
+      message: `${points.toLocaleString('ko-KR')}P가 적립되었습니다`,
       icon: '💰',
       confirmText: '확인',
     });
@@ -52,10 +52,10 @@ const Alert = {
 
     // 아이콘 배경색 결정
     const iconBgColors = {
-      success: '#27ae60',
-      error: '#e74c3c',
-      warning: '#f39c12',
-      info: '#3498db',
+      success: 'linear-gradient(135deg, #27ae60 0%, #229954 100%)',
+      error: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+      warning: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
+      info: 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
       points: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     };
 
@@ -86,9 +86,12 @@ const Alert = {
       this.close();
     });
 
-    // 오버레이 클릭 시 닫기
+    // 오버레이 클릭 시 닫기 (optional)
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
+        if (onConfirm) {
+          onConfirm();
+        }
         this.close();
       }
     });
