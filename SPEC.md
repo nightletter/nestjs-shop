@@ -1,32 +1,115 @@
-### 기술스택
-- [x] pnpm
-- [x] nestjs
-- [x] typeorm
+# Shop E-commerce Backend Specification
 
-### 핵심기능
+## Overview
 
-1. 로그인
-- [x] JWT 기반 로그인
-- [x] 가입된 정보가 없을 시 회원가입 창에서 회원가입 가능 (ID, 비밀번호만 입력해서) -> 가입 정보는 아이디, 비밀번호만
+NestJS 기반 의류 쇼핑몰 백엔드. JWT 인증, Redis Streams 비동기 처리, Toss 결제 연동.
 
-2. 상품
-- [x] 카테고리 (아우터, 상의, 하의) 별 상품 목록 조회
+---
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Runtime | Node.js + pnpm |
+| Framework | NestJS |
+| Database | MySQL + TypeORM |
+| Cache/Queue | Redis, BullMQ, Redis Streams |
+| Auth | JWT (passport-jwt) |
+| Payment | Toss Payments |
+| View | Handlebars (HBS) |
+
+---
+
+## Features
+
+### 1. Authentication
+- [x] JWT 기반 로그인/로그아웃
+- [x] 회원가입 (ID, 비밀번호)
+
+### 2. Products
+- [x] 카테고리별 상품 목록 (아우터, 상의, 하의)
 - [x] 상품 상세 조회
-- [x] 사이즈 옵션 필요 (s, m, l, xl, xxl)
-- [x] 소재, 원산지, 세탁방법 등 상품 정보
-- [x] 판매가격, 세일가격 필요
-- [x] 장바구니에 추가 기능
+- [x] 사이즈 옵션 (S, M, L, XL, XXL)
+- [x] 상품 정보 (소재, 원산지, 세탁방법)
+- [x] 판매가격, 세일가격
+- [x] 장바구니 담기
 
-3. 장바구니
-- [x] 조회, 수량변경, 삭제 기능 필요
+### 3. Cart
+- [x] 장바구니 조회
+- [x] 수량 변경
+- [x] 삭제
 
-4. 결제
-- [ ] 결제 기능, 결제 완료 필요
+### 4. Order & Payment
+- [x] 주문 생성 (`POST /api/order`)
+- [x] Toss 결제 연동 (`TossPaymentClient.confirm()`)
+- [x] 결제 완료 처리 (`POST /api/order/confirm`)
 
-5. 포인트
-- [ ] 결제 완료 이후 결제금액의 10프로 포인트로 적립
-- [ ] redis streams 를 이용해서 consume 기반으로 포인트 적립 처리 및 포인트 테이블에 저장
+### 5. Points (Redis Streams)
+- [ ] 결제 완료 시 10% 포인트 적립
+- [ ] Redis Streams Consumer로 비동기 처리
+- [ ] Points 테이블 저장
 
-6. 알림
-- [ ] 결제 완료 이후 결제가 완료되었습니다 알림 처리
-- [ ] redis streams 를 잉요해서 consume 기반으로 알림 테이블에만 저장
+### 6. Notifications (Redis Streams)
+- [ ] 결제 완료 알림 생성
+- [ ] Redis Streams Consumer로 비동기 처리
+- [ ] Notifications 테이블 저장
+
+---
+
+## Data Models
+
+```
+User: id, username, password, createdAt
+Product: id, name, category, price, salePrice, sizes, material, origin, care
+Order: id, userId, items[], totalAmount, status, createdAt
+Payment: id, orderId, amount, method, status, tossPaymentKey
+Point: id, userId, amount, reason, createdAt
+Notification: id, userId, message, read, createdAt
+```
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /auth/login | 로그인 |
+| POST | /auth/signup | 회원가입 |
+| GET | /products | 상품 목록 |
+| GET | /products/:id | 상품 상세 |
+| GET | /cart | 장바구니 조회 |
+| POST | /cart | 장바구니 추가 |
+| PATCH | /cart/:id | 수량 변경 |
+| DELETE | /cart/:id | 삭제 |
+| POST | /orders | 주문 생성 |
+| POST | /payments/confirm | 결제 승인 |
+
+---
+
+## Architecture Diagram
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Client    │────▶│   NestJS    │────▶│    MySQL    │
+└─────────────┘     └──────┬──────┘     └─────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │    Redis    │
+                    │   Streams   │
+                    └──────┬──────┘
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+       ┌─────────────┐          ┌─────────────┐
+       │   Points    │          │   Notify    │
+       │  Consumer   │          │  Consumer   │
+       └─────────────┘          └─────────────┘
+```
+
+---
+
+## Progress
+
+- **Done**: Auth, Products, Cart, Order, Payment
+- **In Progress**: -
+- **Pending**: Points, Notifications (Redis Streams 기반 Consumer)
