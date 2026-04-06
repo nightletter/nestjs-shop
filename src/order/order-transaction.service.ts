@@ -37,6 +37,7 @@ class OrderTransactionService {
     const order = await this.orderProcessor.create(
       userId,
       request.productId,
+      request.salePrice,
       pointsUsed,
     );
 

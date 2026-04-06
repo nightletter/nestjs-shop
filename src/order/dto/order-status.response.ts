@@ -5,10 +5,23 @@ export class OrderStatusResponse {
   id: number;
 
   @Expose()
-  status: string
+  status: string;
 
-  constructor(id: number, status: string) {
+  @Expose()
+  totalAmount?: number;
+
+  @Expose()
+  pointsUsed?: number;
+
+  constructor(
+    id: number,
+    status: string,
+    totalAmount?: number,
+    pointsUsed?: number,
+  ) {
     this.id = id;
     this.status = status;
+    this.totalAmount = totalAmount;
+    this.pointsUsed = pointsUsed;
   }
 }

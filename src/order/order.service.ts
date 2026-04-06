@@ -59,15 +59,6 @@ class OrderService {
     userId: number,
     orderId: number,
   ): Promise<OrderStatusResponse> {
-    const cachedStatus = await this.cacheService.getCache<string>(
-      'order',
-      orderId,
-    );
-
-    if (cachedStatus) {
-      return new OrderStatusResponse(orderId, cachedStatus);
-    }
-
     const order = await this.orderRepository.findOneByOrFail({
       id: orderId,
       userId,
@@ -78,7 +69,12 @@ class OrderService {
     }
 
     await this.cacheService.setCache('order', order.id, order.status);
-    return new OrderStatusResponse(orderId, order.status);
+    return new OrderStatusResponse(
+      orderId,
+      order.status,
+      order.totalAmount,
+      order.pointsUsed,
+    );
   }
 }
 

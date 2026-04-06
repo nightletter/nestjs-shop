@@ -35,11 +35,17 @@ export class Order {
   @CreateDateColumn()
   createAt: Date;
 
-  static create(userId: number, productId: number, pointsUsed?: number): Order {
+  static create(
+    userId: number,
+    productId: number,
+    salePrice: number,
+    pointsUsed?: number,
+  ): Order {
     const order = new Order();
     order.orderNumber = randomUUID();
     order.userId = userId;
     order.productId = productId;
+    order.totalAmount = salePrice;
     order.pointsUsed = pointsUsed ?? 0;
     order.status = 'CREATED';
     return order;

@@ -10,8 +10,15 @@ export class OrderProcessor {
     private readonly orderRepository: Repository<Order>,
   ) {}
 
-  async create(userId: number, productId: number, pointsUsed?: number): Promise<Order> {
-    return this.orderRepository.save(Order.create(userId, productId, pointsUsed));
+  async create(
+    userId: number,
+    productId: number,
+    salePrice: number,
+    pointsUsed?: number,
+  ): Promise<Order> {
+    return this.orderRepository.save(
+      Order.create(userId, productId, salePrice, pointsUsed),
+    );
   }
 
   async save(order: Order) {

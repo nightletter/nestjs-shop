@@ -5,6 +5,8 @@
 export const QueueEvents = {
   ORDER_SUCCESS: 'order.success',
   ORDER_FAILURE: 'order.failure',
+  POINTS_EARN: 'points.earn',
+  POINTS_USE: 'points.use',
 } as const;
 
 /**

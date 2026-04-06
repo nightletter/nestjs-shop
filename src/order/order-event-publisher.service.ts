@@ -44,12 +44,19 @@ export class OrderEventPublisher {
       pointsUsed: order.pointsUsed,
     };
 
+    // 포인트 차감 (사용한 포인트가 있는 경우)
     if (order.pointsUsed > 0) {
-      await this.pointsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {
+      await this.pointsQueue.add(QueueEvents.POINTS_USE, payload, {
         removeOnComplete: 100,
         removeOnFail: 100,
       });
     }
+
+    // 포인트 적립 (결제 금액의 10%)
+    await this.pointsQueue.add(QueueEvents.POINTS_EARN, payload, {
+      removeOnComplete: 100,
+      removeOnFail: 100,
+    });
 
     // 알림은 항상 보냄
     await this.notificationsQueue.add(QueueEvents.ORDER_SUCCESS, payload, {

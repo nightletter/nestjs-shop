@@ -19,20 +19,46 @@ export class PointsConsumer extends WorkerHost {
   }
 
   async process(job: Job<OrderCompleteEvent>): Promise<void> {
-    if (job.name !== QueueEvents.ORDER_SUCCESS) {
-      return;
+    if (job.name === QueueEvents.POINTS_USE) {
+      await this.handlePointsUse(job.data);
+    } else if (job.name === QueueEvents.POINTS_EARN) {
+      await this.handlePointsEarn(job.data);
     }
+  }
 
+  private async handlePointsUse(data: OrderCompleteEvent): Promise<void> {
     const point = Point.create(
-      job.data.userId,
+      data.userId,
       'order.complete',
-      job.data.orderId,
-      -job.data.pointsUsed,
-      '주문',
+      data.orderId,
+      -data.pointsUsed,
+      '주문 시 포인트 사용',
     );
 
     await this.pointsService.subtractPointWithBalance(point);
+    this.logger.log(
+      `Points used for order ${data.orderId}: -${data.pointsUsed}`,
+    );
+  }
 
-    this.logger.log(`Processing points for order: ${job.data.orderId}`);
+  private async handlePointsEarn(data: OrderCompleteEvent): Promise<void> {
+    // 결제 금액의 10% 적립 (실제 결제 금액 = 총 금액 - 사용한 포인트)
+    const actualPayment = data.amount - data.pointsUsed;
+    const earnAmount = Math.floor(actualPayment * 0.1);
+
+    if (earnAmount > 0) {
+      const point = Point.create(
+        data.userId,
+        'order.complete',
+        data.orderId,
+        earnAmount,
+        '주문 완료 포인트 적립 (10%)',
+      );
+
+      await this.pointsService.earnPointWithBalance(point);
+      this.logger.log(
+        `Points earned for order ${data.orderId}: +${earnAmount}`,
+      );
+    }
   }
 }
