@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { firstValueFrom } from 'rxjs';
@@ -8,6 +8,8 @@ import { TossPaymentConfirmResponseDto } from './dto/toss-payment-confirm-respon
 
 @Injectable()
 export class TossPaymentClient {
+  private readonly logger = new Logger(TossPaymentClient.name);
+
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -34,9 +36,16 @@ export class TossPaymentClient {
           },
         },
       ),
-    );
+    )
+      .then((res) => {
+        this.logger.log('then');
+        return res.data;
+      })
+      .catch((err) => {
+        this.logger.error(err);
+      });
 
-    return plainToInstance(TossPaymentConfirmResponseDto, result.data, {
+    return plainToInstance(TossPaymentConfirmResponseDto, result, {
       excludeExtraneousValues: true,
     });
   }

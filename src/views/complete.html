@@ -84,10 +84,11 @@
   // 네비게이션 바 렌더링
   Auth.renderNavbar();
 
-  const num = localStorage.getItem('orderNum') || '#SH-00000';
-  document.getElementById('order-num').textContent = num;
-
   const urlParams = new URLSearchParams(window.location.search);
+  const orderId = urlParams.get('orderId') || '';
+  
+  // 주문 번호 표시 (orderId에서 추출)
+  document.getElementById('order-num').textContent = orderId || '#SH-00000';
   
   // 초기 결제 금액 표시 (URL 파라미터에서)
   const initialAmount = Number(urlParams.get('amount') || 0);
@@ -152,9 +153,10 @@
 
   // 주문 상태 조회 API
   async function checkOrderStatus() {
-    const orderId = localStorage.getItem('currentOrderId');
     if (!orderId) {
       console.error('주문 ID가 없습니다.');
+      stopPolling();
+      showError('주문 정보를 찾을 수 없습니다.');
       return;
     }
 
@@ -306,48 +308,24 @@
   // 페이지 로드 시 실행
   updateIcon('processing');
   
-  const confirmKey = 'orderConfirmed_' + (localStorage.getItem('currentOrderId') || '');
-  const alreadyConfirmed = sessionStorage.getItem(confirmKey);
-  
-  // 먼저 현재 주문 상태 확인 (이미 완료된 건이면 confirm 스킵)
+  // 페이지 초기화 함수
   async function initializePage() {
-    const orderId = localStorage.getItem('currentOrderId');
+    // URL에 결제 정보가 있는지 확인
+    const paymentKey = urlParams.get('paymentKey');
+    const paymentType = urlParams.get('paymentType');
+    
     if (!orderId) {
       showError('주문 정보를 찾을 수 없습니다.');
       return;
     }
 
-    // 현재 주문 상태 확인
-    try {
-      const response = await Auth.fetch(`/api/order/${orderId}/status`, {
-        method: 'GET',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // 이미 완료되었거나 실패한 주문이면 바로 UI 표시
-        if (data.status === 'COMPLETED') {
-          handleOrderStatus(data.status, data.totalAmount);
-          await showSuccess();
-          return;
-        } else if (data.status === 'FAILED') {
-          handleOrderStatus(data.status, data.totalAmount);
-          showError('결제에 실패했습니다.');
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('초기 주문 상태 조회 실패:', error);
-    }
-
-    // 진행 중인 주문만 confirm 및 폴링 시작
-    if (!alreadyConfirmed) {
-      // confirm 한 번만 호출
-      confirm();
-      sessionStorage.setItem(confirmKey, 'true');
+    // URL에 결제 정보가 있으면 confirm 호출 (토스 결제 완료 직후)
+    if (paymentKey && paymentType) {
+      console.log('결제 완료 → confirm 호출');
+      await confirm();
     } else {
-      // 이미 confirm 호출됨 - polling만 시작
+      // URL에 결제 정보가 없으면 바로 polling 시작 (새로고침 또는 직접 접근)
+      console.log('결제 정보 없음 → polling만 시작');
       startPolling();
     }
   }

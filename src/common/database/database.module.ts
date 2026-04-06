@@ -23,7 +23,7 @@ import { RedisModule } from '../redis/redis.module';
         // 엔티티 자동 스캔은 아래 옵션이 가장 안전합니다.
         autoLoadEntities: true,
         synchronize: true, // 개발 환경 전용
-        logging: true,
+        logging: false,
         dropSchema: true,
         // MySQL 드라이버 옵션 (extra 객체 내부에 선언하거나 직접 지원하는 경우 확인)
         extra: {

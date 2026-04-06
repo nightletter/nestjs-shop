@@ -252,10 +252,6 @@
           throw new Error('주문 번호가 없습니다.');
         }
 
-        // orderId를 localStorage에 저장 (complete.html에서 polling에 사용)
-        localStorage.setItem('currentOrderId', createdOrder.id);
-        localStorage.setItem('orderNum', orderId);
-
         // 결제할 남은 금액을 계산
         const useAll = document.getElementById('use-all-points')?.checked === true;
         let pointsBalanceAfter = pointsBalance;
@@ -269,7 +265,7 @@
 
         if (remainingToPay === 0) {
           // 포인트로 전액 결제된 경우 결제 위젯 호출 없이 완료 페이지로 이동
-          window.location.href = '/order/complete';
+          window.location.href = `/order/complete?orderId=${orderId}&amount=${rendered.salePrice}`;
           return;
         }
 
