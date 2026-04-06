@@ -8,13 +8,17 @@ import {
 } from '@/common/constants/queue-events.constants';
 import { Point } from '@/points/entities/point.entity';
 import PointsService from '@/points/points.service';
+import { NotificationSseService } from '@/notifications/notification-sse.service';
 
 @Processor(QueueNames.POINTS)
 @Injectable()
 export class PointsConsumer extends WorkerHost {
   private readonly logger = new Logger(PointsConsumer.name);
 
-  constructor(private readonly pointsService: PointsService) {
+  constructor(
+    private readonly pointsService: PointsService,
+    private readonly notificationService: NotificationSseService,
+  ) {
     super();
   }
 
@@ -59,6 +63,10 @@ export class PointsConsumer extends WorkerHost {
       this.logger.log(
         `Points earned for order ${data.orderId}: +${earnAmount}`,
       );
+
+      this.notificationService.push('points.earned', data.userId, {
+        points: earnAmount,
+      });
     }
   }
 }

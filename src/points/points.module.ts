@@ -8,9 +8,14 @@ import { AuthModule } from '@/auth/auth.module';
 import { PointsListener } from '@/points/points.listener';
 import { PointBalance } from '@/points/entities/point-balance';
 import { PointsReader } from '@/points/points.reader';
+import { NotificationsModule } from '@/notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Point, PointBalance]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([Point, PointBalance]),
+    AuthModule,
+    NotificationsModule,
+  ],
   controllers: [PointsController],
   providers: [PointsService, PointsConsumer, PointsListener, PointsReader],
   exports: [PointsService, PointsReader],
