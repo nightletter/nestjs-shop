@@ -85,10 +85,11 @@
   Auth.renderNavbar();
 
   const urlParams = new URLSearchParams(window.location.search);
-  const orderId = urlParams.get('orderId') || '';
-  
+  const orderNumber = urlParams.get('orderId') || '';
+  const orderId = sessionStorage.getItem('orderId')
+
   // 주문 번호 표시 (orderId에서 추출)
-  document.getElementById('order-num').textContent = orderId || '#SH-00000';
+  document.getElementById('order-num').textContent = orderNumber || '#SH-00000';
   
   // 초기 결제 금액 표시 (URL 파라미터에서)
   const initialAmount = Number(urlParams.get('amount') || 0);
@@ -198,9 +199,11 @@
     if (status === 'COMPLETED') {
       stopPolling();
       showSuccess();
+      clearUpOrderIdInSessionStorage()
     } else if (status === 'FAILED') {
       stopPolling();
       showError('결제에 실패했습니다. 다시 시도해주세요.');
+      clearUpOrderIdInSessionStorage()
     } else if (status === 'IN_PROGRESS' || status === 'CREATED') {
       // 계속 polling
       showProcessing();
@@ -368,6 +371,15 @@
       disconnectSSE();
     }
   });
+
+  function clearUpOrderIdInSessionStorage() {
+    if (orderId) {
+      sessionStorage.removeItem('orderId');
+      console.log(sessionStorage.getItem('orderId'));
+    }
+
+    console.log(sessionStorage.getItem('orderId'));
+  }
 </script>
 </body>
 </html>

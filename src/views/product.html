@@ -252,6 +252,8 @@
           throw new Error('주문 번호가 없습니다.');
         }
 
+        sessionStorage.setItem('orderId', createdOrder.id);
+
         // 결제할 남은 금액을 계산
         const useAll = document.getElementById('use-all-points')?.checked === true;
         let pointsBalanceAfter = pointsBalance;
