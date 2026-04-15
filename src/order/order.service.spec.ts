@@ -82,8 +82,15 @@ describe('OrderService', () => {
 
       const result = await service.create(1, request);
 
-      expect(orderTransactionService.createWithPayment).toHaveBeenCalledWith(1, request);
-      expect(cacheService.setCache).toHaveBeenCalledWith('order', mockOrder.id, mockOrder.status);
+      expect(orderTransactionService.createWithPayment).toHaveBeenCalledWith(
+        1,
+        request,
+      );
+      expect(cacheService.setCache).toHaveBeenCalledWith(
+        'order',
+        mockOrder.id,
+        mockOrder.status,
+      );
       expect(result).toBeDefined();
     });
   });

@@ -76,6 +76,10 @@
 </div>
 
 <script>
+  const SESSION_ORDER_ID_KEY = 'orderId';
+  const POLLING_INTERVAL_MS = 2_000;
+  const MAX_POLLING_COUNT = 10;
+
   // 인증 확인
   if (!Auth.requireAuth()) {
     // requireAuth에서 이미 리다이렉트 처리
@@ -86,19 +90,19 @@
 
   const urlParams = new URLSearchParams(window.location.search);
   const orderNumber = urlParams.get('orderId') || '';
-  const orderId = sessionStorage.getItem('orderId')
-
-  // 주문 번호 표시 (orderId에서 추출)
-  document.getElementById('order-num').textContent = orderNumber || '#SH-00000';
-  
-  // 초기 결제 금액 표시 (URL 파라미터에서)
+  const orderEntityId = sessionStorage.getItem(SESSION_ORDER_ID_KEY) || '';
   const initialAmount = Number(urlParams.get('amount') || 0);
+  const paymentType = urlParams.get('paymentType') || '';
+  const paymentKey = urlParams.get('paymentKey') || '';
+
+  document.getElementById('order-num').textContent = orderNumber || '#SH-00000';
   if (initialAmount > 0) {
-    document.getElementById('total-amount').textContent = `₩${initialAmount.toLocaleString('ko-KR')}`;
+    document.getElementById('total-amount').textContent =
+      `₩${initialAmount.toLocaleString('ko-KR')}`;
   }
+
   let pollingInterval = null;
   let pollingCount = 0;
-  const MAX_POLLING_COUNT = 10; // 최대 30번 (30초)
 
   // 아이콘 변경 함수
   function updateIcon(type) {
@@ -121,48 +125,99 @@
     }
   }
 
-  // 결제 확인 API 호출
-  async function confirm() {
-    const data = {
-      paymentType: urlParams.get('paymentType'),
-      paymentKey: urlParams.get('paymentKey'),
-      orderId: urlParams.get('orderId'),
-      amount: Number(urlParams.get('amount')),
-    }
-
-    try {
-      const response = await fetch('/api/order/confirm', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        console.log('결제 확인 요청 성공');
-        // 확인 요청 후 polling 시작
-        startPolling();
-      } else {
-        showError('결제 확인 요청에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('결제 확인 실패:', error);
-      showError('결제 확인 중 오류가 발생했습니다.');
+  function clearOrderIdInSessionStorage() {
+    if (orderEntityId) {
+      sessionStorage.removeItem(SESSION_ORDER_ID_KEY);
     }
   }
 
-  // 주문 상태 조회 API
+  function showProcessing() {
+    updateIcon('processing');
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.className = 'status-message status-processing';
+    statusDiv.textContent = '결제를 처리하고 있습니다...';
+  }
+
+  async function refreshNavbarPoints() {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      Auth.loadPoints();
+    } catch (error) {
+      console.error('포인트 갱신 실패:', error);
+    }
+  }
+
+  async function showSuccess() {
+    updateIcon('success');
+    document.getElementById('page-title').textContent = '결제 완료';
+    document.getElementById('page-subtitle').innerHTML =
+      '주문이 접수되었습니다.<br/>확인 메일이 곧 발송됩니다.';
+    document.getElementById('home-btn').style.display = 'block';
+    clearOrderIdInSessionStorage();
+    await refreshNavbarPoints();
+  }
+
+  function showError(message) {
+    updateIcon('failed');
+    document.getElementById('page-title').textContent = '결제 실패';
+    document.getElementById('page-subtitle').innerHTML =
+      '죄송합니다.<br/>결제 처리 중 문제가 발생했습니다.';
+    document.getElementById('home-btn').style.display = 'block';
+
+    const statusDiv = document.getElementById('status-message');
+    statusDiv.className = 'status-message status-failed';
+    statusDiv.textContent = message;
+  }
+
+  function updateAmount(totalAmount) {
+    if (totalAmount === undefined) {
+      return;
+    }
+
+    const amountElement = document.getElementById('total-amount');
+    if (amountElement) {
+      amountElement.textContent = `₩${totalAmount.toLocaleString('ko-KR')}`;
+    }
+  }
+
+  function stopPolling() {
+    if (!pollingInterval) {
+      return;
+    }
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+
+  function handleOrderStatus(status, totalAmount) {
+    updateAmount(totalAmount);
+
+    if (status === 'COMPLETED') {
+      stopPolling();
+      void showSuccess();
+      return;
+    }
+
+    if (status === 'FAILED') {
+      stopPolling();
+      clearOrderIdInSessionStorage();
+      showError('결제에 실패했습니다. 다시 시도해주세요.');
+      return;
+    }
+
+    if (status === 'IN_PROGRESS' || status === 'CREATED') {
+      showProcessing();
+    }
+  }
+
   async function checkOrderStatus() {
-    if (!orderId) {
-      console.error('주문 ID가 없습니다.');
+    if (!orderEntityId) {
       stopPolling();
       showError('주문 정보를 찾을 수 없습니다.');
       return;
     }
 
     try {
-      const response = await Auth.fetch(`/api/order/${orderId}/status`, {
+      const response = await Auth.fetch(`/api/order/${orderEntityId}/status`, {
         method: 'GET',
       });
 
@@ -174,61 +229,49 @@
       }
     } catch (error) {
       console.error('주문 상태 조회 오류:', error);
-      // Auth.fetch에서 401/403은 이미 처리됨
     }
 
-    pollingCount++;
+    pollingCount += 1;
     if (pollingCount >= MAX_POLLING_COUNT) {
       stopPolling();
       showError('주문 처리 시간이 초과되었습니다. 고객센터로 문의해주세요.');
     }
   }
 
-  // 주문 상태에 따른 UI 업데이트
-  function handleOrderStatus(status, totalAmount) {
-    console.log('주문 상태:', status);
-
-    // 결제 금액 표시
-    if (totalAmount !== undefined) {
-      const amountElement = document.getElementById('total-amount');
-      if (amountElement) {
-        amountElement.textContent = `₩${totalAmount.toLocaleString('ko-KR')}`;
-      }
-    }
-
-    if (status === 'COMPLETED') {
-      stopPolling();
-      showSuccess();
-      clearUpOrderIdInSessionStorage()
-    } else if (status === 'FAILED') {
-      stopPolling();
-      showError('결제에 실패했습니다. 다시 시도해주세요.');
-      clearUpOrderIdInSessionStorage()
-    } else if (status === 'IN_PROGRESS' || status === 'CREATED') {
-      // 계속 polling
-      showProcessing();
-    }
-  }
-
-  // Polling 시작
   function startPolling() {
-    pollingInterval = setInterval(checkOrderStatus, 2_000);
-  }
-
-  // Polling 중지
-  function stopPolling() {
     if (pollingInterval) {
-      clearInterval(pollingInterval);
-      pollingInterval = null;
+      return;
     }
+
+    pollingInterval = setInterval(checkOrderStatus, POLLING_INTERVAL_MS);
   }
 
-  // 처리중 UI
-  function showProcessing() {
-    updateIcon('processing');
-    const statusDiv = document.getElementById('status-message');
-    statusDiv.className = 'status-message status-processing';
-    statusDiv.textContent = '결제를 처리하고 있습니다...';
+  async function confirmPayment() {
+    const payload = {
+      paymentType,
+      paymentKey,
+      orderId: orderNumber,
+      amount: initialAmount,
+    };
+
+    try {
+      const response = await fetch('/api/order/confirm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        startPolling();
+      } else {
+        showError('결제 확인 요청에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('결제 확인 실패:', error);
+      showError('결제 확인 중 오류가 발생했습니다.');
+    }
   }
 
   // SSE 연결 함수
@@ -240,146 +283,70 @@
     }
 
     SSE.connect(userId, {
-      onOpen: () => {
-        console.log('✅ SSE 연결 완료');
-      },
-      onMessage: (data) => {
-        console.log('📨 실시간 이벤트:', data);
-      },
+      onOpen: () => {},
+      onMessage: () => {},
       onError: (error) => {
-        console.error('❌ SSE 연결 오류:', error);
-      }
+        console.error('SSE 연결 오류:', error);
+      },
     });
 
     // 특정 이벤트 타입별 처리
-    SSE.on('payment.completed', (data) => {
-      console.log('결제 완료 이벤트:', data);
-    });
+    SSE.on('payment.completed', () => {});
 
     SSE.on('points.earned', (data) => {
-      console.log('포인트 적립 이벤트:', data);
-      
-      // 예쁜 포인트 적립 알림 표시
       const points = data.points || data.amount || 0;
       Alert.showPointsEarned(points);
-      
-      // 네비게이션 바 포인트 갱신
       Auth.loadPoints();
     });
 
-    SSE.on('order.shipped', (data) => {
-      console.log('배송 시작 이벤트:', data);
-    });
+    SSE.on('order.shipped', () => {});
   }
 
-  // 성공 UI
-  async function showSuccess() {
-    updateIcon('success');
-    document.getElementById('page-title').textContent = '결제 완료';
-    document.getElementById('page-subtitle').innerHTML = '주문이 접수되었습니다.<br/>확인 메일이 곧 발송됩니다.';
-
-    // 홈으로 가기 버튼 표시
-    document.getElementById('home-btn').style.display = 'block';
-
-    // 네비게이션 바 포인트 갱신 (Consumer 처리 대기 후)
-    await refreshNavbarPoints();
-  }
-
-  // 네비게이션 바 포인트 갱신
-  async function refreshNavbarPoints() {
-    try {
-      // 포인트 적립 처리를 위해 잠시 대기 (Consumer 처리 시간)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // 네비게이션 바의 포인트 갱신
-      Auth.loadPoints();
-    } catch (error) {
-      console.error('포인트 갱신 실패:', error);
-      // 실패해도 UI는 계속 진행
-    }
-  }
-
-  // 실패 UI
-  function showError(message) {
-    updateIcon('failed');
-    document.getElementById('page-title').textContent = '결제 실패';
-    document.getElementById('page-subtitle').innerHTML = '죄송합니다.<br/>결제 처리 중 문제가 발생했습니다.';
-
-    document.getElementById('home-btn').style.display = 'block';
-  }
-
-  // 페이지 로드 시 실행
-  updateIcon('processing');
-  
-  // 페이지 초기화 함수
   async function initializePage() {
-    // URL에 결제 정보가 있는지 확인
-    const paymentKey = urlParams.get('paymentKey');
-    const paymentType = urlParams.get('paymentType');
-    
-    if (!orderId) {
+    updateIcon('processing');
+
+    if (!orderEntityId) {
       showError('주문 정보를 찾을 수 없습니다.');
       return;
     }
 
-    // URL에 결제 정보가 있으면 confirm 호출 (토스 결제 완료 직후)
     if (paymentKey && paymentType) {
-      console.log('결제 완료 → confirm 호출');
-      await confirm();
+      await confirmPayment();
     } else {
-      // URL에 결제 정보가 없으면 바로 polling 시작 (새로고침 또는 직접 접근)
-      console.log('결제 정보 없음 → polling만 시작');
       startPolling();
     }
   }
 
-  // 홈 버튼 클릭 핸들러
   function handleHomeClick() {
     cleanup();
     window.location.href = '/products';
   }
 
-  // SSE 연결 정리 함수
   function disconnectSSE() {
     if (SSE.isConnected()) {
-      console.log('🔌 SSE 연결 종료');
       SSE.disconnect();
     }
   }
 
-  // 페이지 정리 함수
   function cleanup() {
     stopPolling();
     disconnectSSE();
   }
 
-  // DOM 로드 완료 시 SSE 연결
   document.addEventListener('DOMContentLoaded', () => {
     connectSSE();
   });
 
-  // 페이지 초기화 실행
   initializePage();
 
-  // 페이지 언로드 시 정리 (여러 이벤트로 확실하게 처리)
   window.addEventListener('beforeunload', cleanup);
   window.addEventListener('pagehide', cleanup);
-  
-  // 페이지를 벗어날 때 (뒤로가기, 링크 클릭 등)
+
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       disconnectSSE();
     }
   });
-
-  function clearUpOrderIdInSessionStorage() {
-    if (orderId) {
-      sessionStorage.removeItem('orderId');
-      console.log(sessionStorage.getItem('orderId'));
-    }
-
-    console.log(sessionStorage.getItem('orderId'));
-  }
 </script>
 </body>
 </html>

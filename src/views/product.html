@@ -42,6 +42,8 @@
 </template>
 
 <script>
+  const SESSION_ORDER_ID_KEY = 'orderId';
+
   // 인증 확인 - 로그인하지 않았으면 로그인 페이지로 리다이렉트
   if (!Auth.requireAuth()) {
     // requireAuth에서 이미 리다이렉트 처리
@@ -52,6 +54,39 @@
 
   function toWon(value) {
     return `₩${Number(value).toLocaleString('ko-KR')}`;
+  }
+
+  function isUseAllPointsChecked() {
+    const pointsCheckbox = document.getElementById('use-all-points');
+    return pointsCheckbox instanceof HTMLInputElement && pointsCheckbox.checked;
+  }
+
+  function parseCreatedOrder(createdOrder) {
+    const orderNumber = String(createdOrder?.orderNumber ?? '');
+    const orderEntityId = String(createdOrder?.id ?? '');
+
+    if (!orderNumber) {
+      throw new Error('주문 번호가 없습니다.');
+    }
+    if (!orderEntityId) {
+      throw new Error('주문 ID가 없습니다.');
+    }
+
+    return { orderNumber, orderEntityId };
+  }
+
+  async function getPointsBalanceSafe(fallback = 0) {
+    try {
+      const data = await Auth.fetchJson('/api/points/balance');
+      return Number(data.balance || 0);
+    } catch (error) {
+      console.error('포인트 조회 실패:', error);
+      return fallback;
+    }
+  }
+
+  function buildCompleteUrl(orderNumber, amount) {
+    return `/order/complete?orderId=${encodeURIComponent(orderNumber)}&amount=${amount}`;
   }
 
   function renderProducts(products) {
@@ -169,12 +204,7 @@
 
     // 포인트 잔액 확인 및 초기 결제 금액 설정
     let pointsBalance = 0;
-    try {
-      const data = await Auth.fetchJson('/api/points/balance');
-      pointsBalance = Number(data.balance || 0);
-    } catch (e) {
-      pointsBalance = 0;
-    }
+    pointsBalance = await getPointsBalanceSafe(0);
 
     const pointsCheckbox = document.getElementById('use-all-points');
     const pointsInfo = document.getElementById('use-points-info');
@@ -220,8 +250,8 @@
         const remaining = computeRemaining();
         try {
           await widgets.setAmount({ currency: 'KRW', value: remaining });
-        } catch (e) {
-          // ignore widget errors
+        } catch (error) {
+          console.error('결제 금액 업데이트 실패:', error);
         }
         updatePointsInfo(remaining);
       });
@@ -246,46 +276,34 @@
         }
 
         const createdOrder = await orderResponse.json();
-        const orderId = String(createdOrder.orderNumber ?? '');
+        const { orderNumber, orderEntityId } = parseCreatedOrder(createdOrder);
 
-        if (!orderId) {
-          throw new Error('주문 번호가 없습니다.');
-        }
-
-        sessionStorage.setItem('orderId', createdOrder.id);
+        sessionStorage.setItem(SESSION_ORDER_ID_KEY, orderEntityId);
 
         // 결제할 남은 금액을 계산
-        const useAll = document.getElementById('use-all-points')?.checked === true;
-        let pointsBalanceAfter = pointsBalance;
-        try {
-          const data = await Auth.fetchJson('/api/points/balance');
-          pointsBalanceAfter = Number(data.balance || 0);
-        } catch (e) {
-          pointsBalanceAfter = pointsBalance;
-        }
+        const useAll = isUseAllPointsChecked();
+        const pointsBalanceAfter = await getPointsBalanceSafe(pointsBalance);
         const remainingToPay = Math.max(rendered.salePrice - (useAll ? pointsBalanceAfter : 0), 0);
 
         if (remainingToPay === 0) {
           // 포인트로 전액 결제된 경우 결제 위젯 호출 없이 완료 페이지로 이동
-          window.location.href = `/order/complete?orderId=${orderId}&amount=${rendered.salePrice}`;
+          window.location.href = buildCompleteUrl(orderNumber, rendered.salePrice);
           return;
         }
 
         await widgets.requestPayment({
-          orderId,
+          orderId: orderNumber,
           orderName: rendered.productName,
           successUrl: window.location.origin + '/order/complete',
           failUrl: window.location.origin + '/order/fail',
           customerEmail: 'customer123@gmail.com',
           customerName: '김토스',
           customerMobilePhone: '01012341234',
-          windowTarget:'self'
+          windowTarget: 'self',
         });
-      } catch (e) {
-        console.log(e);
-        return;
+      } catch (error) {
+        console.error('결제 요청 실패:', error);
       }
-
     });
 
   }

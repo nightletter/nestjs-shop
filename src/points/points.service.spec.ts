@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import PointsService from './points.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import PointsService from './points.service';
 import { Point } from './entities/point.entity';
 import { PointBalance } from './entities/point-balance';
-import { Repository } from 'typeorm';
 
 describe('PointsService', () => {
   let service: PointsService;
@@ -76,4 +76,3 @@ describe('PointsService', () => {
     });
   });
 });
-

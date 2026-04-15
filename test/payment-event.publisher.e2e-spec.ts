@@ -38,9 +38,8 @@ describe('PaymentEventPublisher (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    paymentEventPublisher = moduleFixture.get<OrderEventPublisher>(
-      OrderEventPublisher,
-    );
+    paymentEventPublisher =
+      moduleFixture.get<OrderEventPublisher>(OrderEventPublisher);
     paymentQueue = moduleFixture.get<Queue>(getQueueToken('payment-queue'));
   });
 

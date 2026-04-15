@@ -98,6 +98,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "<rootDir>/../jest.setup.ts"
+    ],
+    "globalSetup": "<rootDir>/../jest.global-setup.js"
   }
 }

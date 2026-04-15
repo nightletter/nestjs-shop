@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../products/entities/product.entity';
@@ -20,7 +24,9 @@ export class OrderValidator {
     }
 
     if (findProduct.salePrice !== salePrice) {
-      throw new BadRequestException('가격 정보가 변경되었습니다. 다시 시도해주세요.');
+      throw new BadRequestException(
+        '가격 정보가 변경되었습니다. 다시 시도해주세요.',
+      );
     }
   }
 }

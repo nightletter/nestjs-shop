@@ -29,6 +29,10 @@
 </div>
 
 <script>
+  const LOGIN_ID_INPUT_ID = 'loginId';
+  const PASSWORD_INPUT_ID = 'pw';
+  const LOGIN_BUTTON_ID = 'btn-login';
+
   // 토큰이 이미 있으면 products 페이지로 리다이렉트
   if (Auth.isAuthenticated()) {
     window.location.href = '/products';
@@ -46,9 +50,27 @@
     window.alert(message);
   }
 
+  function getInputValue(elementId) {
+    const input = document.getElementById(elementId);
+    return input instanceof HTMLInputElement ? input.value.trim() : '';
+  }
+
+  function bindEnterSubmit(elementId, handler) {
+    const element = document.getElementById(elementId);
+    if (!(element instanceof HTMLInputElement)) {
+      return;
+    }
+    element.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        handler();
+      }
+    });
+  }
+
   async function tryLogin() {
-    const loginId = document.getElementById('loginId').value.trim();
-    const pw = document.getElementById('pw').value.trim();
+    const loginId = getInputValue(LOGIN_ID_INPUT_ID);
+    const pw = getInputValue(PASSWORD_INPUT_ID);
+
     if (!loginId || !pw) {
       showShake();
       return;
@@ -86,10 +108,13 @@
     window.location.href = '/products';
   }
 
-  document.getElementById('btn-login').addEventListener('click', tryLogin);
-  ['loginId', 'pw'].forEach(id =>
-    document.getElementById(id).addEventListener('keydown', e => e.key === 'Enter' && tryLogin()),
-  );
+  const loginButton = document.getElementById(LOGIN_BUTTON_ID);
+  if (loginButton instanceof HTMLButtonElement) {
+    loginButton.addEventListener('click', tryLogin);
+  }
+
+  bindEnterSubmit(LOGIN_ID_INPUT_ID, tryLogin);
+  bindEnterSubmit(PASSWORD_INPUT_ID, tryLogin);
 </script>
 </body>
 </html>

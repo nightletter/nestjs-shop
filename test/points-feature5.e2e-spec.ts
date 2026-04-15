@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '@/app.module';
 import { DataSource } from 'typeorm';
+import { AppModule } from '@/app.module';
 import { User } from '@/users/entities/user.entity';
 import { Product } from '@/products/entities/product.entity';
 import { Order } from '@/order/entities/order.entity';

@@ -3,7 +3,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { OrderCompleteEvent } from '../order/order-event-publisher.service';
 import { NotificationsService } from './notifications.service';
-import { QueueEvents, QueueNames } from '@/common/constants/queue-events.constants';
+import {
+  QueueEvents,
+  QueueNames,
+} from '@/common/constants/queue-events.constants';
 
 @Processor(QueueNames.NOTIFICATIONS)
 @Injectable()
