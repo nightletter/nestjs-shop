@@ -5,6 +5,7 @@ import { plainToInstance } from 'class-transformer';
 import { firstValueFrom } from 'rxjs';
 import { SuccessOrderDto } from './dto/success-order.dto';
 import { TossPaymentConfirmResponseDto } from './dto/toss-payment-confirm-response.dto';
+import { RuntimeException } from '@nestjs/core/errors/exceptions';
 
 @Injectable()
 export class TossPaymentClient {
@@ -42,7 +43,7 @@ export class TossPaymentClient {
         return res.data;
       })
       .catch((err) => {
-        this.logger.error(err);
+        throw new Error('결제 승인처리 중 오류가 발생했습니다.');
       });
 
     return plainToInstance(TossPaymentConfirmResponseDto, result, {

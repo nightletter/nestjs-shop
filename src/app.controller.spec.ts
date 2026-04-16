@@ -33,7 +33,7 @@ describe('AppController', () => {
       const render = jest.fn();
       const res = { render } as unknown as Response;
 
-      appController.renderOrderComplete(res);
+      appController.renderOrderCompleteAlias(res);
 
       expect(render).toHaveBeenCalledWith('complete');
     });

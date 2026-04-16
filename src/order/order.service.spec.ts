@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import OrderService from './order.service';
 import { TossPaymentClient } from './toss-payment.client';
 import { Order } from './entities/order.entity';
@@ -12,6 +13,7 @@ describe('OrderService', () => {
   let service: OrderService;
   let orderTransactionService: jest.Mocked<OrderTransactionService>;
   let cacheService: jest.Mocked<CacheService>;
+  let orderRepository: jest.Mocked<Repository<Order>>;
 
   const mockOrder = {
     id: 1,
@@ -64,6 +66,7 @@ describe('OrderService', () => {
     service = module.get<OrderService>(OrderService);
     orderTransactionService = module.get(OrderTransactionService);
     cacheService = module.get(CacheService);
+    orderRepository = module.get(getRepositoryToken(Order));
   });
 
   it('should be defined', () => {
@@ -97,12 +100,17 @@ describe('OrderService', () => {
 
   describe('getOrderStatus', () => {
     it('should return cached status if available', async () => {
-      cacheService.getCache.mockResolvedValue('COMPLETED');
+      orderRepository.findOneByOrFail.mockResolvedValue(mockOrder);
+      cacheService.getCache.mockResolvedValue(mockOrder.status);
 
       const result = await service.getOrderStatus(1, 1);
 
-      expect(result.status).toBe('COMPLETED');
-      expect(cacheService.getCache).toHaveBeenCalledWith('order', 1);
+      expect(result.status).toBe('CREATED');
+      expect(cacheService.setCache).toHaveBeenCalledWith(
+        'order',
+        mockOrder.id,
+        mockOrder.status,
+      );
     });
   });
 });

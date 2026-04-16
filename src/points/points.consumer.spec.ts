@@ -5,10 +5,12 @@ import PointsService from './points.service';
 import { OrderCompleteEvent } from '@/order/order-event-publisher.service';
 import { QueueEvents } from '@/common/constants/queue-events.constants';
 import { Point } from './entities/point.entity';
+import { NotificationSseService } from '@/notifications/notification-sse.service';
 
 describe('PointsConsumer', () => {
   let consumer: PointsConsumer;
-  let pointsService: PointsService;
+  let pointsService: jest.Mocked<PointsService>;
+  let notificationService: jest.Mocked<NotificationSseService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,15 +19,24 @@ describe('PointsConsumer', () => {
         {
           provide: PointsService,
           useValue: {
-            subtractPointWithBalance: jest.fn(),
-            earnPointWithBalance: jest.fn(),
+            subtractPointWithBalance: jest.fn().mockResolvedValue(undefined),
+            earnPointWithBalance: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: NotificationSseService,
+          useValue: {
+            push: jest.fn(),
           },
         },
       ],
     }).compile();
 
     consumer = module.get<PointsConsumer>(PointsConsumer);
-    pointsService = module.get<PointsService>(PointsService);
+    pointsService = module.get(PointsService) as jest.Mocked<PointsService>;
+    notificationService = module.get(
+      NotificationSseService,
+    ) as jest.Mocked<NotificationSseService>;
   });
 
   afterEach(() => {
@@ -79,7 +90,7 @@ describe('PointsConsumer', () => {
 
       const call = (pointsService.subtractPointWithBalance as jest.Mock).mock
         .calls[0][0];
-      expect(call.amount).toBe(-0); // -0은 JavaScript에서 0과 동일하지만 표현이 다름
+      expect(call.amount).toBe(-0);
       expect(call.userId).toBe(200);
     });
   });
@@ -180,6 +191,33 @@ describe('PointsConsumer', () => {
 
       // 5 * 0.1 = 0.5 → 0 (버림) → 적립 안 함
       expect(pointsService.earnPointWithBalance).not.toHaveBeenCalled();
+      expect(notificationService.push).not.toHaveBeenCalled();
+    });
+
+    it('적립 후 알림을 발송해야 함', async () => {
+      const eventData: OrderCompleteEvent = {
+        event: QueueEvents.ORDER_SUCCESS,
+        orderId: 1,
+        userId: 100,
+        amount: 50000,
+        pointsUsed: 0,
+      };
+
+      const job = {
+        name: QueueEvents.POINTS_EARN,
+        data: eventData,
+      } as Job<OrderCompleteEvent>;
+
+      await consumer.process(job);
+
+      expect(notificationService.push).toHaveBeenCalledTimes(1);
+      expect(notificationService.push).toHaveBeenCalledWith(
+        'points.earned',
+        100,
+        {
+          points: 5000,
+        },
+      );
     });
   });
 
@@ -202,6 +240,7 @@ describe('PointsConsumer', () => {
 
       expect(pointsService.subtractPointWithBalance).not.toHaveBeenCalled();
       expect(pointsService.earnPointWithBalance).not.toHaveBeenCalled();
+      expect(notificationService.push).not.toHaveBeenCalled();
     });
   });
 });
