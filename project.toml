@@ -1,0 +1,23 @@
+[_]
+schema-version = "0.2"
+id = "com.shop.backend"
+name = "shop"
+
+[io.buildpacks]
+exclude = [
+  "node_modules",
+  "dist",
+  "coverage",
+  ".git",
+  ".github",
+  ".env",
+  ".env.*",
+  ".idea",
+  ".vscode",
+  ".DS_Store",
+  "*.log"
+]
+
+[[io.buildpacks.build.env]]
+name = "NPM_CONFIG_LEGACY_PEER_DEPS"
+value = "true"

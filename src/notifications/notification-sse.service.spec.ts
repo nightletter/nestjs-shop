@@ -1,5 +1,5 @@
-import { NotificationSseService } from './notification-sse.service';
 import { Subject } from 'rxjs';
+import { NotificationSseService } from './notification-sse.service';
 
 describe('NotificationSseService', () => {
   let service: NotificationSseService;
@@ -208,8 +208,8 @@ describe('NotificationSseService', () => {
       const observable1 = service.asObservable(user1);
       const observable2 = service.asObservable(user2);
 
-      let user1Events: string[] = [];
-      let user2Events: string[] = [];
+      const user1Events: string[] = [];
+      const user2Events: string[] = [];
 
       observable1.subscribe((event) => {
         user1Events.push(event.data.type);
@@ -326,7 +326,7 @@ describe('NotificationSseService', () => {
 
       // Step 1: Create observable and subscribe
       const observable = service.asObservable(userId);
-      let events: string[] = [];
+      const events: string[] = [];
 
       observable.subscribe((event) => {
         events.push(event.data.type);
