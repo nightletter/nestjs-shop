@@ -14,7 +14,7 @@ export class OrderValidator {
     private readonly productRepository: Repository<Product>,
   ) {}
 
-  async isValid(productId: number, salePrice: number) {
+  async isValid(productId: number, salePrice: number): Promise<true> {
     const findProduct = await this.productRepository.findOneBy({
       id: productId,
     });
@@ -28,5 +28,7 @@ export class OrderValidator {
         '가격 정보가 변경되었습니다. 다시 시도해주세요.',
       );
     }
+
+    return true;
   }
 }
